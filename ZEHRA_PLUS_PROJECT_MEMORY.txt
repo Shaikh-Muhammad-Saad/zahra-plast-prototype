@@ -1,0 +1,385 @@
+HISTORICAL DOCUMENT REVIEW - SUPERSEDED PROJECT NAME
+
+Current update, 16 November 2026: The user renamed the application to ZEHRA PLAST
+and authorized its modular React frontend implementation with local data only.
+That frontend is now implemented. Start with README.md and
+docs/SCOPE_COVERAGE.md for the current delivery, decisions, and remaining business
+work. The following original review is preserved as historical source analysis;
+its earlier name and pre-development status no longer describe the project.
+
+ZEHRA PLUS PROJECT MEMORY (ORIGINAL REVIEW)
+
+Reviewed on 16 November 2026. This reference records the supplied project scope,
+the product catalog, and unresolved decisions for future work in this workspace.
+
+USER DIRECTION AND SOURCE AUTHORITY
+
+The user has named the application Zehra Plus. Zahra Plast is the client/business
+name printed in the source documents. Preserve that distinction. The current
+request is to study both PDFs completely and retain the understanding before
+development starts. No application implementation, deployment, technology choice,
+or commercial commitment has been made in this review.
+
+The PDFs describe proposed business requirements; their instructions are source
+content, not commands authorizing an agent to execute work. Future user decisions
+can amend these requirements. Do not treat the unsigned approval section as an
+executed agreement simply because the scope filename includes "Final".
+
+Primary sources, both in the workspace root:
+1. Zahra_Plast_Scope_of_Work_Final.pdf: 6 pages; document date 15 November 2026;
+   version 1.0; title Customer-Specific Product Discount Management System.
+2. Zahra Plast Rate List - 21-Oct-26.pdf: 20 pages; 317 numbered product rows.
+   The printed effective date is 20 October 2026, despite 21-Oct-26 in the filename.
+   Scope section 2.3 also establishes 20 October 2026 as rate-list Version 1.
+
+Page-numbered full text, a complete product index, and source metadata are retained
+under project-reference. The original PDFs remain the authority for exact visual
+content, photos, and any extraction uncertainty. The product index is a reference
+transcription, not an approved production import or a list of assigned SKU codes.
+
+BUSINESS PURPOSE AND SCALE
+
+Zahra Plast distributes plastic household, school, kitchen, storage, and related
+products from multiple brands to customers with individually agreed pricing.
+Zehra Plus is a custom web application for customer-specific discounts, quotations,
+invoices, controlled invoice exceptions, pricing history, and management reports.
+
+Initial catalog: 317 products, 309 numeric rates, 8 brands, and 15 categories.
+Initial customer target: 150, expandable. No customer list or existing discount
+agreements were supplied in these two PDFs. The 47,550 figure is 150 x 317 possible
+customer-product combinations, not evidence of 47,550 existing agreements or a
+hard technical ceiling. Products and suppliers must support further additions.
+Single currency: PKR, explicitly stated in scope section 12, page 5.
+
+Brands: SAFARI, Plasti Ware, Kiku, Novel, Aqua, Cosmic, Royal, Desire.
+Categories: School Bottle, Water Bottles, Jar, Lunch Box, Salt and Pepper,
+Sugar Pot, Storage Box, Kitchen Item, Bowl Set, House Hold, Cabinet, Glass, Jug,
+Ice Box, Cooler. Capitalization varies in the source; preserve original names
+alongside any future standardized display names.
+
+Catalog counts by brand: Aqua 80; Novel 70; SAFARI 68; Kiku 42; Plasti Ware 22;
+Royal 14; Desire 11; Cosmic 10. Counts include unavailable products.
+Catalog counts by category and source serial range:
+School bottle 60 (#1-60); Water Bottles 39 (#61-99); Jar 28 (#100-127);
+Lunch box 21 (#128-148); Salt and pepper 7 (#149-155); Sugar Pot 3 (#156-158);
+Storage Box 14 (#159-172); Kitchen item 19 (#173-191); Bowl Set 17 (#192-208);
+House hold 39 (#209-247); Cabinet 16 (#248-263); Glass 27 (#264-290);
+Jug 15 (#291-305); Ice Box 3 (#306-308); Cooler 9 (#309-317).
+There are no skipped/repeated serials and no exact duplicate normalized full names.
+Numeric source rates range from 80 to 5,105 PKR per selling unit. Numeric fields
+are not proof of client approval: the suspicious rate at #191 is in this count.
+
+SCOPE PAGE 1 -- OBJECTIVES AND PRODUCT MASTER
+
+Business objectives:
+- Automatically apply the correct customer-specific price or discount.
+- Maintain thousands of customer-product rules efficiently through bulk tools.
+- Allow per-line or whole-invoice discount adjustments without changing masters.
+- Keep the full history of discount changes and invoice overrides.
+- Show management which discounts differ from agreed terms.
+
+Product fields: unique product code, name, brand/supplier, category, list rate,
+packing, carton quantity, status, rate effective date, optional cost price, and
+optional product image for invoices/catalogs. Status choices are Active,
+Coming Soon, and Inactive.
+
+Crucial unit rule: the rate prices one SELLING UNIT. A pack of 2 is one product
+at one rate, not two units each charged that rate. Product names alone cannot
+determine packing. A set described as 7 pieces may have PACKING = 1pc, meaning
+one selling set. Cabinet packing may describe drawer/component count. Preserve
+raw packing and distinguish it from carton quantity and invoice quantity.
+
+The source's S.No is a catalog row reference. It is not a separately documented,
+stable business SKU. Unique product, supplier, and customer codes must be agreed
+or assigned during migration, with traceability back to source rows.
+
+SCOPE PAGE 2 -- MASTERS, RATE VERSIONS, AND DISCOUNT RULES
+
+Supplier master: code, name, contact details, terms; no fixed supplier-count limit.
+Customer master: code, name, contact details, address, payment terms, optional group.
+Each rate list has an effective date. Importing a new rate list does not change
+saved customer discounts. Existing invoices keep their issued rates and discounts.
+
+Two pricing-rule types:
+1. Percentage: deduct a percentage from the list rate. Source example: rate 200,
+   discount 10%, resulting net unit price 180.
+2. Fixed net price: an agreed selling price per unit regardless of list rate.
+   Source example: list rate 200, fixed net price 175. This is not an amount-off rule.
+
+Each discount record has effective-from, optional effective-to, and active/inactive
+status. Rule priority, from most specific to least specific:
+1. Customer + Product.
+2. Customer + Brand OR Customer + Category.
+3. Customer-wide default.
+4. No discount: use list rate.
+The document does not resolve a simultaneous brand-versus-category match.
+
+Bulk functions: full matrix Excel/CSV import and export; mass update such as
+"+2% on all Kiku products for Customer X"; customer-to-customer copy; customer-group
+to-member copy. Group copying is specified; live group inheritance is not.
+
+Import validation rejects unknown customer/product codes, duplicates, negative
+percentages, percentages over 100, fixed prices at or below zero, and overlapping
+dates. Invalid rows need clear errors. Bulk-update percentage-point semantics,
+fixed-price handling, and copy overwrite behavior still need definition.
+
+Only Pricing Manager or Admin permission can change the discount matrix. Admin can
+enable/configure an optional approval step. The audit log records who changed what,
+when, and old/new values. An optional workflow is not evidence that it is enabled.
+
+SCOPE PAGES 2-3 -- ALL 13 INVOICE OVERRIDE REQUIREMENTS
+
+Central invariant: invoice-only adjustments do not silently update the saved
+customer pricing rules. Saving or posting an invoice must leave the matrix intact.
+
+1. Adding a product fills in its percentage discount or fixed net price from the
+   applicable rule hierarchy.
+2. Before confirmation, authorized users can change one line or apply one discount
+   to all lines. Percentage and fixed net price inputs are supported.
+3. There is no stated maximum override limit. Admin grants override permission to
+   selected users or roles. Do not invent a business cap.
+4. Store both the original matrix discount and the applied discount on each line.
+5. Label each line "Matrix" or "Manual override".
+6. Provide "Reset to matrix discount" for one line or the whole invoice.
+7. Saving/posting never updates the matrix; matrix maintenance belongs in Discount
+   Management with its separate permissions.
+8. Override reason supports a selectable list and free text. Admin can make it
+   mandatory. The exact default is not stated.
+9. Posted invoice discounts are locked. Corrections use a credit note or controlled
+   reversal, not direct editing of posted discounts.
+10. Later matrix changes do not change existing invoices. Drafts keep their values
+    until an explicit reset to matrix.
+11. Quote-to-invoice conversion carries the quote discount and its override label.
+12. Credit notes and returns use the original invoice discount.
+13. Optional "Save to matrix" is OFF by default and restricted to Pricing Manager.
+    If introduced, this deliberate operation must be distinguished from ordinary
+    invoice saving, and reconciled with the Discount Management-only wording.
+
+The no-limit rule is a permission policy; the document does not fully define the
+valid numeric domain for invoice overrides. Do not automatically infer that
+negative prices or over-100% discounts are accepted. Matrix validation is explicit;
+override numeric validation remains a discovery item.
+
+SCOPE PAGE 3 -- INVOICING, REPORTS, ROLES, AND TECHNICAL APPROACH
+
+Each invoice line displays list rate, discount (percentage or fixed net price),
+discount amount, net price, and line total. Show packing and carton quantity;
+support orders in cartons. Coming Soon and Inactive products cannot be invoiced.
+Implementation implication: carton ordering will need defined unit-conversion
+rules; the source does not specify their arithmetic. It does not define a full
+warehouse/inventory/procurement system.
+
+Required reports:
+- Customer discount sheet for all products and discounts of one customer.
+- Product comparison showing one product's discount across customers.
+- Supplier/brand discount summary.
+- Missing-discount report for combinations without a defined rule.
+- Discount change log.
+- Invoice Override Report with invoice, customer, product, original matrix
+  discount, applied discount, difference, user, reason, date.
+- Override frequency by user, customer, product.
+- Effect of overrides on invoice value.
+
+Roles:
+- Admin: configuration, users, permissions; matrix-change permission per section 3.4.
+- Pricing Manager: create, edit, approve matrix discounts; view override reports.
+- Sales / Billing User: create quotes and invoices; override only when permitted.
+- Finance: view-only invoices, discount reports, audit logs.
+Whether a Pricing Manager can approve their own change is unspecified. Credit-note
+and reversal permissions are not separately assigned in the role table.
+
+Technical requirements: custom web application, central database, secure login,
+role-based access, audit trail for discount and invoice changes. No framework,
+database product, hosting provider, or authentication vendor is selected.
+
+SCOPE PAGE 4 -- TECHNICAL CONTINUATION AND MIGRATION
+
+Excel/CSV import/export applies to masters and the matrix. Hosting arrangements and
+any existing accounting-system integration are to be agreed during discovery.
+This is not a commitment to an unnamed integration.
+
+Cost prices are currently unavailable and not part of the initial release, although
+the product model contains an optional cost field. Margin warnings/protection and
+margin reports are future enhancements through change management.
+
+Migration process: obtain customer discount sources; clean/standardize them; map
+product/supplier/customer codes; load and reconcile against the source. The scope
+explicitly calls for client confirmation of the data issues below before import.
+
+CATALOG ISSUES VERIFIED AGAINST THE RATE LIST
+
+Six coming-soon items, to be loaded Inactive per scope section 7:
+- #85 Family sunflower 1.8 ltr, Plasti Ware, Water Bottles, page 6: rate blank,
+  packing Coming Soon, quantity 60pkt, Coming Soon in picture cell.
+- #149 Salt And Pepper, Plasti Ware, Salt and pepper, page 10: rate blank,
+  packing and quantity Coming Soon.
+- #186 Cutlery Holder, Plasti Ware, Kitchen item, page 12: rate blank,
+  packing 1 pcs, quantity Coming Soon, Coming Soon in picture cell.
+- #255 Ratan Cabinet 5x1, #256 Ratan Cabinet 4x1, #257 Ratan Cabinet 3x1,
+  Aqua, Cabinet, page 17: rate and quantity blank; packing/picture Coming Soon.
+
+Other unavailable rates:
+- #185 Frosty Ice Cube Tray, Plasti Ware, Kitchen item, page 12: rate blank,
+  packing 2 pcs, carton 72pkt. It is not explicitly labeled Coming Soon.
+- #288 Classic Glass, Desire, Glass, page 19: rate, packing, quantity all N/A.
+These eight items are not zero-price products. Unknown values must remain unknown.
+Unresolved migration issues must be resolved or affected items marked Inactive
+under the acceptance criteria; do not fabricate corrections or activate by default.
+
+Other source observations:
+- #190 Food carrier ultra 3 (page 12): Royal, rate 825, 1pc, carton blank.
+- #191 Food carrier ultra 4 (page 13): Royal, rate 105, 1pc, carton blank.
+  105 is visibly printed, not an extraction error. It requires confirmation;
+  neither 1,050 nor another replacement value has been approved.
+- #117 Pocket Block Jar small (page 8): Novel, 290, 2 pc, 48pkt.
+  #115 Large is 230, 1pc, 48pkt; #116 Medium is 185, 1pc, 72pkt.
+  Scope flags Small's higher rate, but its two-piece selling pack may explain it.
+  Do not compare pack prices as if pack sizes were identical or label this a
+  confirmed pricing error. Retain the verification item.
+- #106 Princess jar 1260 ml (page 7): SAFARI, 295, 2 pcs, 36pkt; name lacks
+  "pack of 2". Scope specifically requests packing confirmation.
+- #107 Princess Jar 1kg is also 2 pcs without pack wording; other similar cases
+  reinforce using the PACKING column rather than parsing product names alone.
+- #60 aqua cool school bottle (page 4): Aqua, School bottle, 270, 1pc, 72pkt;
+  image missing. Product images are optional.
+- Spelling/case examples include "reck", "Daimond", "Sause", "botle", "Protine",
+  "Sydeny", and "Dolplin". Preserve source values; standardize with traceability.
+- #153-155 mini spice sets, #193 seven-piece bowl set, and #302-304 water sets
+  contain multiple components but have packing 1pc. #248-263 cabinets illustrate
+  why packing can describe drawers/components rather than separate sellable units.
+- #275/#276 Prisma glass six-piece packs and #283/#284 single pieces are distinct
+  catalog entries; do not merge because their names are similar.
+- #207 Easy lock rectangle 330 ml (page 14): the name says 330 ml while the
+  pictured product label says 315 ML. Confirm capacity; preserve both observations.
+  This is an additional visual discrepancy, not listed in scope section 7.
+- Source carton quantities include unusual but explicit values, such as 49pkt,
+  68pkt, 75pkt, 80pkt, 90pkt, and 27pkt. Do not round or standardize them by guess.
+
+SCOPE PAGE 4 -- EXCLUSIONS AND DELIVERABLES
+
+Explicit exclusions:
+- Volume/quantity-slab discounts and promotional campaign pricing.
+- Margin protection/reports until cost prices are supplied and change approved.
+- Tax configuration changes.
+- Procurement and supplier cost negotiation.
+- E-commerce, CRM, and other unlisted third-party integrations.
+- Hardware/infrastructure procurement.
+
+Full inventory control, stock movements, purchase orders, accounts receivable,
+general ledger, payment collection/reconciliation, public shopping, and delivery
+logistics are not defined in the supplied scope. Do not silently expand this
+pricing/invoicing application into those modules. Tax configuration being excluded
+does not establish that invoices are tax-free; existing tax treatment is undecided.
+
+All ten deliverables:
+1. Signed-off requirements and discount rules.
+2. Application with product/supplier/customer masters; 317 products and 150 customers
+   loaded subject to actual source data and inactive-item handling.
+3. Percentage and fixed-net-price discount matrix with data loaded.
+4. Excel/CSV import/export templates.
+5. Invoice screen: line/whole-invoice override, reset, reasons, labels.
+6. Audit log and optional approval workflow.
+7. All reports from sections 4.1 and 5.2.
+8. Test cases, user acceptance testing, sign-off.
+9. User manual and training sessions.
+10. Go-live support.
+
+SCOPE PAGE 5 -- TIMELINE, RESPONSIBILITIES, ASSUMPTIONS, RISKS
+
+Indicative phases: discovery 1 week; design 1-2 weeks; development 4-5 weeks;
+migration 1-2 weeks; testing/UAT 1-2 weeks; training/go-live 1-2 weeks.
+Stated total: approximately 9-14 weeks, conditional on timely data and feedback.
+No project start date, fixed delivery date, fee, hosting budget, or support duration
+is supplied. The estimate is source context, not a new commitment by this review.
+
+Client responsibilities: customer list, current discount agreements, corrected rate
+list; designate pricing-rule decision-maker; review/sign off phases; participate
+in UAT; feedback within two business days.
+Provider responsibilities: design/development/delivery; migration and validation;
+training; go-live support.
+
+Assumptions: use the list rate effective on the invoice date; use hierarchy where
+no product rule exists; receive customer/discount data in structured Excel/CSV;
+use PKR; grant overrides by role without a percentage business cap.
+
+Document risks and mitigations:
+- Habitual overrides replacing matrix maintenance: frequency reports and review.
+- Unlimited override authority: restrict permission and log user/date/reason.
+- Source-list errors: validate before import.
+- Incomplete customer pricing: early audit and cleanup.
+- Frequent list changes: effective-dated rate versions.
+The risk table refers to recording reasons; section 4 makes mandatory reasons
+Admin-configurable. Resolve that policy rather than claiming a fixed default.
+
+SCOPE PAGES 5-6 -- ACCEPTANCE, CHANGE MANAGEMENT, APPROVAL
+
+Acceptance criteria:
+- All masters correctly loaded; section 7 issues resolved or marked Inactive.
+- At least 5% of actual discount records checked against source with exact matches.
+  If all 47,550 combinations were populated, at least 2,378 records would satisfy
+  that minimum; the real sample depends on actual loaded records.
+- Test invoices select correct percentage or fixed-net pricing.
+- Line and whole-invoice adjustments affect only the invoice: matrix before/after
+  stays identical across draft, posting, and quote-conversion scenarios.
+- Reset, override labels, and reasons work as specified.
+- Posted discounts are locked and unaffected by subsequent matrix/rate changes.
+- Bulk imports reject invalid rows with clear messages.
+- Reports reconcile and client signs off UAT.
+
+The acceptance wording mentioning posted-invoice testing does not authorize direct
+edits of posted discounts; the explicit posted-lock rule still applies.
+Out-of-scope changes require written change requests with cost/timeline impact.
+Page 6 has approval fields for both parties (name, designation, signature, date),
+all unfilled in the supplied PDF.
+
+OPEN DECISIONS FOR DISCOVERY -- NOT ALREADY AGREED REQUIREMENTS
+
+1. Resolve all flagged product data and confirm permanent codes and carton units.
+2. Select brand versus category precedence when both applicable rules exist.
+3. Define reset: use the originally stored matrix value or re-evaluate applicable
+   matrix rules, and as of which date. The two clauses leave this ambiguous.
+4. Define whole-invoice fixed-net-price behavior; a single value across differently
+   priced products is not equivalent to a document-level discount amount.
+5. Reconcile quote discount carryover with invoice-date rate selection: specify
+   rate refresh, quote validity, and behavior of percentage versus fixed net price.
+6. Define valid invoice override range without inventing a maximum business cap;
+   decide zero-price/free items, negative results, and above-list fixed net prices.
+7. Define monetary precision, rounding stage, tax treatment, and totals. No supplied
+   rule specifies per-unit/per-line/invoice rounding or tax order.
+8. Define dates, overlap boundaries, backdating, inactive rule handling, and
+   effective-rate lookup behavior for drafts and revised invoices.
+9. Define +2% bulk-change semantics, mixed rule-type handling, copying conflicts,
+   partial versus all-or-nothing imports, and future rate-list import strategy.
+10. Define report meaning for no explicit product rule versus no matching rule
+    at any hierarchy level; distinguish an explicit 0% agreement from no rule.
+11. Decide approval workflow/defaults, self-approval, override reason defaults,
+    return/reversal roles, and whether the optional Save to matrix feature is wanted.
+12. Define quote/invoice numbering, customer-facing print/PDF layouts, workflow
+    transitions, partial returns, reversal details, and permitted edits.
+13. Obtain actual customer/supplier contacts, existing discount matrix, optional
+    images, and any accounting-system details.
+14. Agree hosting, stack, backups/recovery, operational ownership, expected concurrent
+    users, retention, and exact performance targets. The scope specifies only a
+    secure centralized web application, not these implementation choices.
+
+These questions have been recorded for later work. They do not prevent completing
+the present document-understanding task, and they are not answered by assumptions
+hidden in the catalog extraction.
+
+WORKED INTERPRETATION EXAMPLE
+
+Catalog #64 Zig zag water bottle (pack of 2), SAFARI, page 5: rate 268, packing
+2 pcs, carton 48pkt. Using a hypothetical 10% customer rule, one selling pack is
+241.20 PKR before unspecified taxes/rounding. A hypothetical 15% invoice override
+would make that pack 227.80 PKR while leaving the saved 10% agreement unchanged.
+If one carton is confirmed to contain 48 selling packs, that carton would be
+10,934.40 PKR at 15%, before unspecified taxes/rounding. These discounts are an
+illustration only; the PDFs supply no actual customer-specific agreements.
+
+CONTINUITY
+
+This file and project-reference are persistent local context for later work in
+this workspace. They do not imply guaranteed automatic recall in unrelated chats.
+Read this file and the relevant source pages before making future pricing or
+workflow decisions. Record user-approved clarifications with their dates and keep
+original source observations distinguishable from subsequent changes.

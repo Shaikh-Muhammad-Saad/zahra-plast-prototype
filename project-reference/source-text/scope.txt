@@ -1,0 +1,417 @@
+===== PAGE 1 =====
+ SCOPE OF WORK
+ Customer-Specific Product Discount Management System
+
+
+ Client                       Zahra Plast
+
+ Document date                15 November 2026
+
+ Version                      1.0
+
+ Reference data               Zahra Plast Rate List applied from 20 October 2026 (317 products)
+
+ Solution type                Custom-built application
+
+ 1. Introduction and Objective
+ Zahra Plast distributes plastic household and school products from multiple suppliers and sells to a large
+ number of customers, each with their own agreed pricing. This document defines the scope of work for a
+ custom-built system that stores a separate discount for every customer on every product, applies it
+ automatically on quotes and invoices, and allows a controlled, one-time change of discount on an individual
+ invoice without affecting the saved customer discounts.
+
+ 1.1 Business objectives
+    Apply the correct customer-specific price or discount automatically at invoicing.
+    Maintain discounts efficiently in bulk, even with thousands of customer-product combinations.
+    Allow users to adjust discounts on an invoice, per line or for the whole invoice, without changing the master
+     discount records.
+    Keep a complete history of every discount change and every invoice-level override.
+    Provide management with clear visibility of discounts given and where they differ from agreed terms.
+
+ 1.2 Current data volumes
+
+ Item                                 Quantity
+
+ Suppliers / brands                   8 brands in the current rate list (SAFARI, Plasti Ware, Kiku, Novel, Aqua, Cosmic, Royal,
+                                      Desire). The system will support any number of suppliers.
+
+ Products                             317 in the current rate list (309 with a rate); the system will support unlimited additions
+
+ Product categories                   15
+
+ Customers                            150 (expandable)
+
+ Maximum discount records             47,550 (150 customers x 317 products), growing as customers and products are added
+
+ 2. Master Data Setup
+ 2.1 Product master
+ Loaded from the Zahra Plast rate list. Fields: product code, name, brand/supplier, category, rate (list price),
+ packing (1 pc, 2 pcs, 3 pcs, 6 pcs, etc.), carton quantity (e.g. 96 pkt), status (Active / Coming Soon / Inactive),
+ rate effective date and an optional cost price field.
+    Categories: School Bottle, Water Bottles, Jar, Lunch Box, Salt and Pepper, Sugar Pot, Storage Box, Kitchen
+     Item, Bowl Set, House Hold, Cabinet, Glass, Jug, Ice Box and Cooler.
+    The rate is the price of one selling unit; for example, a "pack of 2" is one product at one rate.
+    Each product has a unique code, as several product names are similar across brands.
+    Product images are optional and can be attached if required for invoices or catalogues.
+
+
+
+
+
+
+Scope of Work - Customer-Specific Discount Management | Zahra Plast                                                                 Page 1
+
+===== PAGE 2 =====
+ 2.2 Supplier and customer masters
+    Suppliers/brands: code, name, contact details and terms. The number of suppliers is not limited.
+    Customers: code, name, contact details, address, payment terms and an optional customer group.
+
+ 2.3 Rate list versioning
+    Each rate list is stored with an effective date. The 20 October 2026 list is Version 1.
+    New rate lists can be imported in future; customer discounts remain unchanged.
+    Existing invoices always keep the rate and discount they were issued with.
+
+ 3. Discount Management
+ 3.1 Discount types
+ Each customer-product discount can be defined in either of two ways:
+
+ Type                       Description                                                   Example
+
+ Percentage                 A percentage deducted from the list rate                      Rate 200, discount 10%, net price 180
+
+ Fixed net price            A special agreed selling price per unit, regardless of        Rate 200, fixed net price 175
+                            list rate
+
+ Each discount record also holds an effective-from date, an optional effective-to date and an active/inactive
+ status.
+
+ 3.2 Discount hierarchy
+ When an invoice is created, the system selects the most specific applicable rule:
+
+ Priority             Rule
+
+ 1                    Customer + Product
+
+ 2                    Customer + Brand or Category
+
+ 3                    Customer-wide default
+
+ 4                    No discount (list rate)
+
+ 3.3 Bulk tools
+    Import and export of the complete discount matrix in Excel/CSV format.
+    Mass update, for example "+2% on all Kiku products for Customer X".
+    Copy discounts from one customer to another, or from a customer group to its members.
+    Import validation: unknown customer or product codes, duplicates, negative or over-100% values, fixed
+     prices at or below zero, and overlapping dates. Invalid rows are rejected with clear error messages.
+
+ 3.4 Approval and audit
+    Changes to the discount matrix are made only by users with the Pricing Manager or Admin permission.
+    An optional approval step for matrix changes can be enabled and configured by the Admin.
+    A complete audit log records who changed what, when, and the old and new values.
+
+ 4. One-Time Discount Change on Invoice
+    Core rule: a discount changed on an invoice applies to that invoice only. It is never written back
+    to the customer-product discount matrix.
+
+
+ #        Requirement
+
+ 1        When a product is added to an invoice, the system fills in the discount or fixed net price from the matrix using the
+          hierarchy in section 3.2.
+
+ 2        Before the invoice is confirmed, an authorized user can change the discount on any single line, or apply one
+          discount to the whole invoice (all lines at once). Users can enter either a percentage or a fixed net price.
+
+
+
+
+Scope of Work - Customer-Specific Discount Management | Zahra Plast                                                                  Page 2
+
+===== PAGE 3 =====
+ #        Requirement
+
+ 3        There is no maximum limit on the override. Permission to override is granted by the Admin to specific users or roles.
+
+ 4        The system stores two values on each line: the original matrix discount and the applied discount.
+
+ 5        Each line is labelled "Matrix" or "Manual override".
+
+ 6        A "Reset to matrix discount" button restores the saved value on a line or on the whole invoice.
+
+ 7        Saving or posting an invoice never updates the matrix. The matrix can only be changed in the Discount Management
+          module by users with that permission.
+
+ 8        A reason can be recorded for each override (selectable list plus free text). The Admin can configure whether the
+          reason is mandatory.
+
+ 9        Once an invoice is posted, its discounts are locked. Corrections are made by credit note or controlled reversal.
+
+ 10       Later changes to the matrix do not alter existing invoices. Draft invoices keep their values unless the user selects
+          "Reset to matrix".
+
+ 11       When a quote is converted to an invoice, the quote's discount is carried over, including the override label.
+
+ 12       Credit notes and returns use the discount from the original invoice.
+
+ 13       Optional, switched off by default: a "Save to matrix" action restricted to the Pricing Manager, so the matrix is never
+          updated by accident.
+
+ 4.1 Override reporting
+    Invoice Override Report: invoice, customer, product, matrix discount, applied discount, difference, user,
+     reason and date.
+    Override frequency by user, customer and product, to highlight where the matrix may need a permanent
+     update.
+    Discount impact of overrides on invoice value.
+
+ 5. Invoicing and Reporting
+ 5.1 Invoice presentation
+    Each line shows list rate, discount (percentage or fixed net price), discount amount, net price and line total.
+    Packing size and carton quantity are shown; ordering in cartons is supported.
+    Products with "Coming Soon" or inactive status cannot be invoiced.
+
+ 5.2 Reports
+    Customer discount sheet: all products and discounts for one customer.
+    Product comparison: one product's discount across all customers.
+    Supplier/brand-wise discount summary.
+    Missing-discount report: customer-product combinations with no rule defined.
+    Discount change log and invoice override reports (section 4.1).
+
+ 5.3 User roles
+
+ Role                                    Access
+
+ Admin                                   System configuration, user and permission management
+
+ Pricing Manager                         Create, edit and approve matrix discounts; view override reports
+
+ Sales / Billing User                    Create quotes and invoices; override discounts where permission is granted
+
+ Finance                                 View-only access to invoices, discount reports and audit logs
+
+ 6. Technical Approach
+    The solution is a custom-built, web-based application with a central database and secure user login.
+    Role-based access control, with all discount and invoice changes recorded in an audit trail.
+
+
+
+
+Scope of Work - Customer-Specific Discount Management | Zahra Plast                                                                          Page 3
+
+===== PAGE 4 =====
+    Excel/CSV import and export for masters and the discount matrix.
+    Hosting arrangement and any integration with an existing accounting system will be agreed during the
+     Discovery phase.
+
+ 6.1 Cost price and margin protection
+ Cost prices are not available at this time and are not part of the initial release. The product master includes an
+ optional cost price field. When cost prices are provided in future, margin warnings on discounts and margin
+ reports can be added as an enhancement through the change management process.
+
+ 7. Data Migration
+    Collect existing customer discount data (spreadsheets, price lists) from the client.
+    Clean and standardize data and map it to the new product, supplier and customer codes.
+    Load the data and reconcile it against the source.
+ The following points in the rate list dated 20 October 2026 require the client's confirmation before import:
+
+ Observation                                                             Items
+
+ "Coming Soon" or no rate (will be loaded as Inactive)                   #85, #149, #186, #255, #256, #257
+
+ Rate missing                                                            #185 Frosty Ice Cube Tray
+
+ Rate shown as "N/A"                                                     #288 Classic Glass
+
+ Carton quantity missing                                                 #190 and #191 Food Carrier Ultra 3 and 4
+
+ Rate to be verified                                                     #191 Food Carrier Ultra 4 is 105, while Ultra 3 is 825
+
+ Rate to be verified                                                     #117 Pocket Block Jar Small is 290, higher than Large at
+                                                                         230
+
+ Packing to be verified                                                  #106 Princess Jar 1260 ml shows 2 pcs but the name does
+                                                                         not say "pack of 2"
+
+ Spelling and naming consistency                                         e.g. "reck" for rack, "Daimond", "Sause", "botle"; mixed upper
+                                                                         and lower case
+
+ Picture missing                                                         #60 aqua cool school bottle
+
+ 8. Out of Scope
+    Volume or quantity-slab discounts and promotional campaign pricing
+    Margin protection and margin reports (until cost prices are provided)
+    Tax configuration changes
+    Procurement and supplier cost negotiation
+    E-commerce, CRM or other third-party integrations not listed in this document
+    Hardware and infrastructure procurement
+
+ 9. Deliverables
+  1.  Signed-off requirements and discount rules
+  2.  Custom application with product, supplier and customer masters (317 products and 150 customers loaded)
+  3.  Discount matrix supporting percentage and fixed net price, with data loaded
+  4.  Excel/CSV import and export templates
+  5.  Invoice screen with per-line and whole-invoice override, reset, reason capture and override labels
+  6.  Audit log and optional approval workflow
+  7.  Reports listed in sections 4.1 and 5.2
+  8.  Test cases, user acceptance testing and sign-off
+  9.  User manual and training sessions
+  10.   Go-live support
+
+
+
+
+Scope of Work - Customer-Specific Discount Management | Zahra Plast                                                                    Page 4
+
+===== PAGE 5 =====
+ 10. Project Timeline (Indicative)
+
+ Phase                               Activities                                                                          Duration
+
+ 1. Discovery                        Requirements, discount rules and hosting decisions                                  1 week
+
+ 2. Design                           Data model, discount hierarchy, invoice override flow, screens,                     1-2 weeks
+                                     templates
+
+ 3. Development                      Masters, discount matrix, invoicing, override, audit, reports                       4-5 weeks
+
+ 4. Data Migration                   Cleanup, mapping, loading and reconciliation                                        1-2 weeks
+
+ 5. Testing and UAT                  Internal testing and client acceptance                                              1-2 weeks
+
+ 6. Training and Go-Live             Training, cutover and post go-live support                                          1-2 weeks
+
+ Total                                                                                                                   ~9-14 weeks
+
+ The timeline depends on timely delivery of customer discount data and client feedback at each phase.
+
+ 11. Responsibilities
+    Client: provide customer list, current discount agreements and corrected rate list; nominate a decision-maker
+     for pricing rules; review and sign off each phase; take part in user acceptance testing; give feedback within 2
+     business days.
+    Service provider: design, develop and deliver the solution; manage data migration and validation; train
+     users; provide go-live support.
+
+ 12. Assumptions
+    Discounts apply to the list rate shown in the rate list in force on the invoice date.
+    Not every customer has a discount on every product; the hierarchy in section 3.2 applies where no specific
+     rule exists.
+    Customer and discount data will be supplied in a structured format (Excel/CSV).
+    All pricing is in a single currency (PKR).
+    Override permission is controlled by user role and is not limited by percentage.
+
+ 13. Risks and Mitigation
+
+ Risk                                                            Mitigation
+
+ Staff override discounts instead of maintaining the             Override reports and periodic review so the matrix is updated where
+ matrix                                                          needed
+
+ No limit on overrides                                           Permission granted only to selected users; every override logged
+                                                                 with user, date and reason
+
+ Errors in the source rate list                                  Pre-import validation (section 7)
+
+ Incomplete customer discount data                               Early data audit and cleanup
+
+ Frequent rate list changes                                      Versioned rate lists with effective dates
+
+ 14. Acceptance Criteria
+    All masters are loaded correctly, with the items in section 7 resolved or marked Inactive.
+    A sample of at least 5% of discount records matches the source data exactly.
+    Test invoices pick up the correct percentage or fixed net price from the matrix.
+    Changing a discount on an invoice, per line or for the whole invoice, changes only that invoice. The
+     matrix value is identical before and after. This is tested on draft invoices, posted invoices and quote
+     conversions.
+    Reset to matrix, override labels and the override reason work as specified.
+    Posted invoices are locked and unaffected by later matrix or rate changes.
+
+
+
+
+Scope of Work - Customer-Specific Discount Management | Zahra Plast                                                                      Page 5
+
+===== PAGE 6 =====
+    Bulk import rejects invalid rows with clear error messages.
+    Reports reconcile with the loaded data, and the client signs off user acceptance testing.
+
+ 15. Change Management
+ Any requirement outside this scope, such as volume discounts, promotions, margin protection or new
+ integrations, will be handled through a written change request stating its impact on cost and timeline.
+
+ 16. Approval
+ By signing below, both parties agree to the scope of work described in this document.
+
+
+ For Zahra Plast                                                        For the Service Provider
+
+ Name:                                                                  Name:
+
+ Designation:                                                           Designation:
+
+ Signature:                                                             Signature:
+
+ Date:                                                                  Date:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Scope of Work - Customer-Specific Discount Management | Zahra Plast                                                                  Page 6

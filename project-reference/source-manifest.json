@@ -1,0 +1,30 @@
+{
+  "review_date": "2026-11-16",
+  "project_name": "Zehra Plast",
+  "previous_project_name": "Zehra Plus",
+  "client_name_in_sources": "Zahra Plast",
+  "review_scope": "All 6 scope pages and all 20 catalog pages read as text and visually reviewed; all 317 catalog rows cross-checked.",
+  "documents": [
+    {
+      "filename": "Zahra_Plast_Scope_of_Work_Final.pdf",
+      "relative_path": "../Zahra_Plast_Scope_of_Work_Final.pdf",
+      "pages": 6,
+      "bytes": 18273,
+      "sha256": "1d80a618dd4de3a54ef85fc725ba9d7e600bd3bb1b428a9ab70c05df24f1784f"
+    },
+    {
+      "filename": "Zahra Plast Rate List - 21-Oct-26.pdf",
+      "relative_path": "../Zahra Plast Rate List - 21-Oct-26.pdf",
+      "pages": 20,
+      "bytes": 17948402,
+      "sha256": "8f94092e1f1edd60459776f6e7d7c36dbe341734fde6db77d6ecc74130c9a658"
+    }
+  ],
+  "artifacts": {
+    "main_memory": "../ZEHRA_PLUS_PROJECT_MEMORY.txt",
+    "product_index": "catalog.json",
+    "counts_and_catalog_page_ranges": "catalog-counts.json",
+    "full_scope_text": "source-text/scope.txt",
+    "full_catalog_text": "source-text/rate-list.txt"
+  }
+}
