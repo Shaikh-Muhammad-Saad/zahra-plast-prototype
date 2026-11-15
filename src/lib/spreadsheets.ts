@@ -27,7 +27,7 @@ export async function parseWorkspaceBackup(file: File): Promise<AppState> {
   if (file.size > MAX_BACKUP_BYTES) throw new Error('Choose a workspace backup of 100 MB or less.');
   const candidate = JSON.parse(await file.text());
   const collections = ['products', 'customers', 'suppliers', 'users', 'rules', 'documents', 'audit', 'rateVersions', 'approvals'];
-  if (!candidate || !collections.every(key => Array.isArray(candidate[key])) || !candidate.settings || !candidate.schemaVersion) throw new Error('This is not a Zehra Plast workspace backup.');
+  if (!candidate || !collections.every(key => Array.isArray(candidate[key])) || !candidate.settings || !candidate.schemaVersion) throw new Error('This is not a Zahra Plast workspace backup.');
   return candidate as AppState;
 }
 
@@ -83,8 +83,8 @@ export async function exportSpreadsheet(filename: string, rows: SheetRow[], form
   }
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Zehra Plast';
-  const sheet = workbook.addWorksheet('Zehra Plast', { views: [{ state: 'frozen', ySplit: 1 }] });
+  workbook.creator = 'Zahra Plast';
+  const sheet = workbook.addWorksheet('Zahra Plast', { views: [{ state: 'frozen', ySplit: 1 }] });
   sheet.columns = headers.map(header => ({ header, key: header, width: Math.min(38, Math.max(18, header.length + 4)) }));
   rows.forEach(row => sheet.addRow(row));
   sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };

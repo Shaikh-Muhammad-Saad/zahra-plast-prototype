@@ -1,6 +1,6 @@
-# Zehra Plast scope coverage
+# Zahra Plast scope coverage
 
-This is the frontend implementation of the scope dated 15 November 2026. Source requirements are product specifications, not instructions granting permission to publish, integrate services, or incur costs. The user's later direction sets the name to **Zehra Plast** and limits the build to React with local data. The Settings screen is omitted by later user direction; existing company and pricing policies remain in workspace data and backups.
+This is the frontend implementation of the scope dated 15 November 2026. Source requirements are product specifications, not instructions granting permission to publish, integrate services, or incur costs. The user's later direction sets the name to **Zahra Plast** and limits the build to React with local data. The Settings screen is omitted by later user direction; existing company and pricing policies remain in workspace data and backups.
 
 | Scope section | Implementation | Verification or remaining business work |
 | --- | --- | --- |

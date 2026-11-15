@@ -1,4 +1,4 @@
-# Zehra Plast local data
+# Zahra Plast local data
 
 `products.json`, `suppliers.json`, `categories.json`, and `images/` preserve the supplied catalog. Product codes `ZP-001` onward are assigned local identifiers; `sourceSerial` and `sourcePage` retain the original references. Prices are PKR per selling unit, not procurement costs. All cost prices remain `null` because none were supplied.
 
@@ -6,9 +6,9 @@
 
 `customers.json`, `users.json`, and the agreements/documents constructed by `index.ts` are explicitly sample data. No real customer names, contacts or pricing agreements were supplied. The 150 sample customer records demonstrate the scope's initial scale. Supplier brand names are real source data; supplier contact information is left blank.
 
-Runtime changes are saved only in this browser's IndexedDB database `zehra-plast-local`. No external database or backend is connected. Writes are atomic and serialized, and pending full snapshots are coalesced so large imports can support the initial 47,550-rule matrix. The header reports saving, saved or a persistent save error. Changes are in memory until the save finishes; export a backup if an error occurs. A loading boundary waits for persisted data before opening the workspace. Existing `zehra-plast.workspace.v1` localStorage data is migrated when no IndexedDB workspace exists, and the original legacy key is left intact.
+Runtime changes are saved only in this browser's IndexedDB database `zahra-plast-local`. No external database or backend is connected. Writes are atomic and serialized, and pending full snapshots are coalesced so large imports can support the initial 47,550-rule matrix. The header reports saving, saved or a persistent save error. Changes are in memory until the save finishes; export a backup if an error occurs. A loading boundary waits for persisted data before opening the workspace. Existing workspaces from the previous spelling's IndexedDB database or legacy localStorage keys are migrated when no current workspace exists; the original storage remains intact. The old default company name is corrected on load and backup restore, while custom company names are preserved.
 
-Local changes do not overwrite these seed files and are not shared between browsers. Backups can be exported/imported from Import & export. Clearing browser storage removes local changes. `auth.ts` contains the public demo credentials shown on the login screen. The single account uses an eight-hour browser session under `zehra-plast.auth.v1`, separate from workspace backups. This frontend gate is not server authentication. Legacy user records remain for backup/audit compatibility, but they cannot be selected or used to sign in. Avoid concurrent editing in multiple tabs; this prototype does not provide multi-user synchronization.
+Local changes do not overwrite these seed files and are not shared between browsers. Backups can be exported/imported from Import & export. Clearing browser storage removes local changes. `auth.ts` contains the public demo credentials shown on the login screen. The single account uses an eight-hour browser session under `zahra-plast.auth.v1`, separate from workspace backups. This frontend gate is not server authentication. Legacy user records remain for backup/audit compatibility, but they cannot be selected or used to sign in. Avoid concurrent editing in multiple tabs; this prototype does not provide multi-user synchronization.
 
 ## Documented prototype decisions
 

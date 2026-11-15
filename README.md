@@ -1,6 +1,6 @@
-# Zehra Plast
+# Zahra Plast
 
-A modular React administration workspace for the Zahra Plast distribution business. The project name is **Zehra Plast**, superseding the earlier working name Zehra Plus.
+A modular React administration workspace for the Zahra Plast distribution business. The project name is **Zahra Plast**, superseding the earlier working name Zahra Plus.
 
 The app covers the supplied pricing and invoicing scope as a **frontend-only implementation**. It includes the real catalog, local editing and persistence, complete sample workflows, and a responsive interface. No backend, external database, or hosting account is configured.
 
@@ -20,7 +20,9 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-The app opens at `/login`. Use **admin@zehraplast.com** with password **Zehra@123**; both are displayed below the login button. There is one workspace account, with no role selection or team management. All workspace routes require a valid local session. Login returns to the requested page; sessions last eight hours, survive refresh, and logout signs out other open tabs.
+The app opens at `/login`. Use **admin@zahraplast.com** with password **Zahra@123**; both are displayed below the login button. There is one workspace account, with no role selection or team management. All workspace routes require a valid local session. Login returns to the requested page; sessions last eight hours, survive refresh, and logout signs out other open tabs.
+
+The branding correction includes the demo credentials and storage namespace. Existing browser workspace data migrates automatically; users of the previous version sign in again with the credentials above.
 
 Authentication is a frontend demo gate, not a server security boundary: the displayed credentials and browser storage are client-controlled. Production access control requires a backend. Authentication sessions are separate from workspace data and are never included in workspace backups.
 

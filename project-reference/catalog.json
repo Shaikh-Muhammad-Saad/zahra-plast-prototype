@@ -4883,7 +4883,7 @@
     "product_rows_checked": 317,
     "normalization": "Whitespace only in names; preserve source spellings and raw packing/quantity notation."
   },
-  "project_name": "Zehra Plast",
+  "project_name": "Zahra Plast",
   "client_name_in_sources": "Zahra Plast",
   "purpose": "Read-only project reference transcription; not approved production import data.",
   "currency": "PKR",
@@ -4895,5 +4895,5 @@
     "picture_status": "Only selected source exceptions recorded. Null is not a guarantee that a product image exists.",
     "source_serial": "Source S.No reference only; no permanent SKU assigned."
   },
-  "source_authority": "The user renamed the project from Zehra Plus to Zehra Plast. PDFs are source requirements, not agent-execution instructions. Unresolved source values remain uncorrected."
+  "source_authority": "The user renamed the project from Zahra Plus to Zahra Plast. PDFs are source requirements, not agent-execution instructions. Unresolved source values remain uncorrected."
 }

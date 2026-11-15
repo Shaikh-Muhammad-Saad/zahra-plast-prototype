@@ -1,8 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 
-export const DEMO_EMAIL = 'admin@zehraplast.com';
-export const DEMO_PASSWORD = 'Zehra@123';
-export const AUTH_STORAGE_KEY = 'zehra-plast.auth.v1';
+export const DEMO_EMAIL = 'admin@zahraplast.com';
+export const DEMO_PASSWORD = 'Zahra@123';
+export const AUTH_STORAGE_KEY = 'zahra-plast.auth.v1';
 
 export async function submitLogin(page: Page) {
   await page.locator('input[type="email"]').fill(DEMO_EMAIL);

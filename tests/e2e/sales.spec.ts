@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => { await login(page); });
 async function savedState(page: Page): Promise<AppState> {
   await expect(page.locator('[role="status"]').filter({ hasText: 'Workspace storage: saved' })).toHaveCount(1);
   return page.evaluate(() => new Promise((resolve, reject) => {
-    const request = indexedDB.open('zehra-plast-local', 1);
+    const request = indexedDB.open('zahra-plast-local', 1);
     request.onsuccess = () => {
       const db = request.result;
       const get = db.transaction('workspace', 'readonly').objectStore('workspace').get('current');

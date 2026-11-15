@@ -12,7 +12,7 @@ function fixture(): AppState {
     users: [{ id: 'admin', name: 'Admin', email: 'admin@example.test', role: 'Admin', canOverride: true, active: true }],
     rules: [], documents: [], audit: [], approvals: [],
     rateVersions: [{ id: 'v1', name: 'Original catalog', effectiveDate: '2026-10-20', rates: { p1: 156 }, createdAt: '2026-10-20T00:00:00Z' }],
-    settings: { companyName: 'Zehra Plast', address: '', phone: '', email: '', approvalRequired: false, overrideReasonRequired: false, allowSaveToMatrix: false, brandCategoryPriority: 'brand', invoicePrefix: 'INV', quotePrefix: 'QUO' },
+    settings: { companyName: 'Zahra Plast', address: '', phone: '', email: '', approvalRequired: false, overrideReasonRequired: false, allowSaveToMatrix: false, brandCategoryPriority: 'brand', invoicePrefix: 'INV', quotePrefix: 'QUO' },
   };
 }
 const ruleRow = { customerCode: 'C-001', scope: 'product', target: 'ZP-001', type: 'percentage', value: '10', effectiveFrom: '2026-11-01', effectiveTo: '', active: 'true' };

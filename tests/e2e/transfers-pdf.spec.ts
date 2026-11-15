@@ -18,12 +18,12 @@ test('all export cards download complete PDFs while Excel remains available', as
   await page.screenshot({ path: 'tmp/qa/transfers-pdf-desktop.png', fullPage: true });
 
   const exports = [
-    ['Products', 'zehra-plast-products.pdf'],
-    ['Customers', 'zehra-plast-customers.pdf'],
-    ['Suppliers', 'zehra-plast-suppliers.pdf'],
-    ['Pricing rules', 'zehra-plast-discounts.pdf'],
-    ['Current rate list', 'zehra-plast-rates.pdf'],
-    ['Complete customer matrix', 'zehra-plast-complete-customer-matrix.pdf'],
+    ['Products', 'zahra-plast-products.pdf'],
+    ['Customers', 'zahra-plast-customers.pdf'],
+    ['Suppliers', 'zahra-plast-suppliers.pdf'],
+    ['Pricing rules', 'zahra-plast-discounts.pdf'],
+    ['Current rate list', 'zahra-plast-rates.pdf'],
+    ['Complete customer matrix', 'zahra-plast-complete-customer-matrix.pdf'],
   ];
 
   for (const [title, filename] of exports) {

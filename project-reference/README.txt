@@ -1,9 +1,9 @@
-ZEHRA PLAST REFERENCE FILES
+ZAHRA PLAST REFERENCE FILES
 
 Start with ../README.md for the current implemented React frontend and
 ../docs/SCOPE_COVERAGE.md for scope mapping and business decisions.
-../ZEHRA_PLUS_PROJECT_MEMORY.txt preserves the original document review under its
-historical filename, including scope boundaries, caveats and discovery questions.
+../ZAHRA_PLUS_PROJECT_MEMORY.txt preserves the original document review with the
+corrected brand spelling, including scope boundaries, caveats and discovery questions.
 
 catalog.json: All 317 catalog entries with source page/serial, exact source fields
 (whitespace normalized), numeric readings and notes. Unavailable rates are null.

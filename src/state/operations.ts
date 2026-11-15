@@ -330,7 +330,7 @@ export function createOperations(getState: () => AppState, setState: (state: App
 }
 
 export function validateBackup(value: AppState) {
-  if (!value || value.schemaVersion !== 1) throw new Error('This is not a compatible Zehra Plast backup.');
+  if (!value || value.schemaVersion !== 1) throw new Error('This is not a compatible Zahra Plast backup.');
   for (const key of ['products', 'customers', 'suppliers', 'users', 'rules', 'documents', 'audit', 'rateVersions', 'approvals'] as const) {
     if (!Array.isArray(value[key])) throw new Error(`Backup is missing ${key}.`);
     if (value[key].some(r => !r || typeof r.id !== 'string' || !r.id.trim())) throw new Error(`Backup has an invalid ${key} identifier.`);

@@ -1,20 +1,21 @@
 HISTORICAL DOCUMENT REVIEW - SUPERSEDED PROJECT NAME
 
-Current update, 16 November 2026: The user renamed the application to ZEHRA PLAST
+Current update, 16 November 2026: The user renamed the application to ZAHRA PLAST
 and authorized its modular React frontend implementation with local data only.
 That frontend is now implemented. Start with README.md and
 docs/SCOPE_COVERAGE.md for the current delivery, decisions, and remaining business
 work. The following original review is preserved as historical source analysis;
 its earlier name and pre-development status no longer describe the project.
+The brand spelling in this review has been corrected to Zahra throughout.
 
-ZEHRA PLUS PROJECT MEMORY (ORIGINAL REVIEW)
+ZAHRA PLUS PROJECT MEMORY (ORIGINAL REVIEW)
 
 Reviewed on 16 November 2026. This reference records the supplied project scope,
 the product catalog, and unresolved decisions for future work in this workspace.
 
 USER DIRECTION AND SOURCE AUTHORITY
 
-The user has named the application Zehra Plus. Zahra Plast is the client/business
+The user has named the application Zahra Plus. Zahra Plast is the client/business
 name printed in the source documents. Preserve that distinction. The current
 request is to study both PDFs completely and retain the understanding before
 development starts. No application implementation, deployment, technology choice,
@@ -41,7 +42,7 @@ BUSINESS PURPOSE AND SCALE
 
 Zahra Plast distributes plastic household, school, kitchen, storage, and related
 products from multiple brands to customers with individually agreed pricing.
-Zehra Plus is a custom web application for customer-specific discounts, quotations,
+Zahra Plus is a custom web application for customer-specific discounts, quotations,
 invoices, controlled invoice exceptions, pricing history, and management reports.
 
 Initial catalog: 317 products, 309 numeric rates, 8 brands, and 15 categories.

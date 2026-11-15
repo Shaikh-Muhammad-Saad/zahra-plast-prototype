@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** Zehra Plast
+**Project:** Zahra Plast
 **Generated:** 2026-11-16 01:38:09
 **Category:** Analytics Dashboard
 **Design Dials:** Density 8/10 (Dense / Dashboard)

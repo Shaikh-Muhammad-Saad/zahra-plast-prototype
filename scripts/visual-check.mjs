@@ -6,8 +6,8 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 await page.goto('http://127.0.0.1:5173/login');
-await page.locator('input[type="email"]').fill('admin@zehraplast.com');
-await page.locator('input[type="password"]').fill('Zehra@123');
+await page.locator('input[type="email"]').fill('admin@zahraplast.com');
+await page.locator('input[type="password"]').fill('Zahra@123');
 await page.getByRole('button', { name: 'Log in', exact: true }).click();
 await page.waitForURL('http://127.0.0.1:5173/');
 for (const [path, name] of [['/', 'overview'], ['/products', 'catalog'], ['/pricing', 'pricing'], ['/invoices', 'invoices'], ['/transfers', 'transfers']]) {

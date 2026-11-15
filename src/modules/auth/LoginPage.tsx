@@ -21,8 +21,8 @@ export default function LoginPage() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to log in. Please try again.'); }
   }
   return <main className="auth-page">
-    <section className="auth-story" aria-label="Zehra Plast workspace">
-      <div className="auth-brand"><span className="auth-brand-symbol"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 8h18L8 24h17M9 16h15" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Zehra Plast<small>BUSINESS WORKSPACE</small></span></div>
+    <section className="auth-story" aria-label="Zahra Plast workspace">
+      <div className="auth-brand"><span className="auth-brand-symbol"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 8h18L8 24h17M9 16h15" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Zahra Plast<small>BUSINESS WORKSPACE</small></span></div>
       <div className="auth-story-content">
         <span className="auth-kicker"><span /> YOUR EVERYDAY BUSINESS, CONNECTED</span>
         <h1>Everything in place.<br /><em>Room to grow.</em></h1>
@@ -51,7 +51,7 @@ export default function LoginPage() {
         <div className="auth-demo-credentials"><div><span className="auth-demo-dot" /><strong>Demo login details</strong><span>Ready to try</span></div><dl><div><dt>Email</dt><dd><code>{DEMO_ACCOUNT.email}</code></dd></div><div><dt>Password</dt><dd><code>{DEMO_ACCOUNT.password}</code></dd></div></dl></div>
         <p className="auth-local-note">This frontend demo uses a local sign-in. Your workspace data stays in this browser.</p>
       </div>
-      <p className="auth-panel-footer">&copy; {new Date().getFullYear()} Zehra Plast</p>
+      <p className="auth-panel-footer">&copy; {new Date().getFullYear()} Zahra Plast</p>
     </section>
   </main>;
 }

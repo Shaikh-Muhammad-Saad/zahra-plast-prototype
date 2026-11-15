@@ -26,8 +26,8 @@ const matrixColumns: PdfExportColumn[] = [
 export function buildTransferPdf(kind: TransferPdfKind, state: AppState): PdfExportDocument {
   const date = today();
   const base = {
-    filename: `zehra-plast-${kind === 'matrix' ? 'complete-customer-matrix' : kind}`,
-    companyName: state.settings.companyName.trim() || 'Zehra Plast',
+    filename: `zahra-plast-${kind === 'matrix' ? 'complete-customer-matrix' : kind}`,
+    companyName: state.settings.companyName.trim() || 'Zahra Plast',
     generatedOn: date,
   };
   let section: PdfExportSection;

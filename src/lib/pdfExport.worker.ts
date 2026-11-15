@@ -13,7 +13,7 @@ self.onmessage = (event: MessageEvent<PdfExportDocument>) => {
   try {
     const report = event.data;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true, putOnlyUsedFonts: true, floatPrecision: 3 });
-    doc.setProperties({ title: `${report.companyName} - ${report.title}`, author: report.companyName, subject: report.subtitle, creator: 'Zehra Plast' });
+    doc.setProperties({ title: `${report.companyName} - ${report.title}`, author: report.companyName, subject: report.subtitle, creator: 'Zahra Plast' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 12;
@@ -86,7 +86,7 @@ self.onmessage = (event: MessageEvent<PdfExportDocument>) => {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(90, 108, 98);
-      doc.text('Zehra Plast | Workspace export', margin, pageHeight - 7);
+      doc.text('Zahra Plast | Workspace export', margin, pageHeight - 7);
       doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - 7, { align: 'right' });
     }
     const buffer = doc.output('arraybuffer');

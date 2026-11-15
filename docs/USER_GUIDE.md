@@ -1,6 +1,6 @@
-# Zehra Plast user guide
+# Zahra Plast user guide
 
-Open the local address printed by `npm run dev` and log in with **admin@zehraplast.com** / **Zehra@123**. The same credentials are displayed below the login button. The overview presents your source catalog and sample business activity.
+Open the local address printed by `npm run dev` and log in with **admin@zahraplast.com** / **Zahra@123**. The same credentials are displayed below the login button. The overview presents your source catalog and sample business activity.
 
 ## Catalog and people
 

@@ -20,7 +20,7 @@ export function createInitialState(): AppState {
     suppliers: structuredClone(suppliers), users: structuredClone(users), rules: [], documents: [], audit: [], approvals: [],
     currentUserId: 'u-admin',
     rateVersions: [{ id: 'rate-v1', name: 'October 2026 · Original catalog', effectiveDate: '2026-10-20', createdAt: '2026-10-20T09:00:00+05:00', rates: Object.fromEntries(products.map(p => [p.id, p.rate])) }],
-    settings: { companyName: 'Zehra Plast', address: '', phone: '', email: '', approvalRequired: false, overrideReasonRequired: true, allowSaveToMatrix: false, brandCategoryPriority: 'brand', invoicePrefix: 'ZP-INV', quotePrefix: 'ZP-QT' },
+    settings: { companyName: 'Zahra Plast', address: '', phone: '', email: '', approvalRequired: false, overrideReasonRequired: true, allowSaveToMatrix: false, brandCategoryPriority: 'brand', invoicePrefix: 'ZP-INV', quotePrefix: 'ZP-QT' },
   };
   const stamp = '2026-10-21T09:00:00+05:00';
   for (let i = 0; i < 120; i++) {

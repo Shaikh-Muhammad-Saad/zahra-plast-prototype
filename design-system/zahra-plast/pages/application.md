@@ -1,4 +1,4 @@
-# Zehra Plast application design
+# Zahra Plast application design
 
 This application-specific interpretation applies to every administration route. The generated master supplies verified data-dense dashboard guidance; its generic marketing/enterprise gateway pattern is not used for this internal admin application.
 

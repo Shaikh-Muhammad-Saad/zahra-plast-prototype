@@ -1,7 +1,10 @@
 import type { AppState } from '../types';
 
-export const LEGACY_STORAGE_KEY = 'zehra-plast.workspace.v1';
-export const DATABASE_NAME = 'zehra-plast-local';
+export const LEGACY_STORAGE_KEY = 'zahra-plast.workspace.v1';
+export const DATABASE_NAME = 'zahra-plast-local';
+// Compatibility only: retain access to workspaces saved before the branding correction.
+const PREVIOUS_STORAGE_KEY = 'zehra-plast.workspace.v1';
+const PREVIOUS_DATABASE_NAME = 'zehra-plast-local';
 const STORE = 'workspace';
 const KEY = 'current';
 let opening: Promise<IDBDatabase> | undefined;
@@ -13,18 +16,40 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE); };
     request.onsuccess = () => { const db = request.result; db.onversionchange = () => { db.close(); opening = undefined; }; resolve(db); };
     request.onerror = () => { opening = undefined; reject(request.error ?? new Error('Local workspace storage could not be opened.')); };
-    request.onblocked = () => { opening = undefined; reject(new Error('Close other Zehra Plast tabs, then reload to open local storage.')); };
+    request.onblocked = () => { opening = undefined; reject(new Error('Close other Zahra Plast tabs, then reload to open local storage.')); };
   });
   return opening;
 }
-export async function readStoredWorkspace(): Promise<AppState | undefined> {
-  const db = await openDatabase();
+function readWorkspace(db: IDBDatabase): Promise<AppState | undefined> {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE, 'readonly');
     const request = transaction.objectStore(STORE).get(KEY);
     request.onsuccess = () => resolve(request.result as AppState | undefined);
     request.onerror = () => reject(request.error ?? new Error('Saved workspace could not be read.'));
   });
+}
+async function readPreviousWorkspace(): Promise<AppState | undefined> {
+  const db = await new Promise<IDBDatabase | undefined>((resolve, reject) => {
+    const request = indexedDB.open(PREVIOUS_DATABASE_NAME);
+    let missing = false;
+    // Abort creation when this browser never had the previous database.
+    request.onupgradeneeded = () => { missing = true; request.transaction?.abort(); };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => missing ? resolve(undefined) : reject(request.error ?? new Error('The previous workspace could not be opened.'));
+    request.onblocked = () => reject(new Error('Close other Zahra Plast tabs, then reload to migrate local storage.'));
+  });
+  if (!db) return undefined;
+  try { return db.objectStoreNames.contains(STORE) ? await readWorkspace(db) : undefined; }
+  finally { db.close(); }
+}
+export async function readStoredWorkspace(): Promise<AppState | undefined> {
+  const saved = await readWorkspace(await openDatabase());
+  // The provider validates and saves the migrated snapshot; original storage stays untouched.
+  return saved ?? await readPreviousWorkspace();
+}
+export function readLegacyWorkspace(): AppState | undefined {
+  const raw = localStorage.getItem(LEGACY_STORAGE_KEY) ?? localStorage.getItem(PREVIOUS_STORAGE_KEY);
+  return raw ? JSON.parse(raw) as AppState : undefined;
 }
 async function commitWorkspace(state: AppState): Promise<void> {
   const db = await openDatabase();

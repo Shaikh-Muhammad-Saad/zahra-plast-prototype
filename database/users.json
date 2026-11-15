@@ -2,7 +2,7 @@
   {
     "id": "u-admin",
     "name": "Demo Administrator",
-    "email": "admin@zehra-plast.example",
+    "email": "admin@zahra-plast.example",
     "role": "Admin",
     "canOverride": true,
     "active": true
@@ -10,7 +10,7 @@
   {
     "id": "u-pricing",
     "name": "Demo Pricing Manager",
-    "email": "pricing@zehra-plast.example",
+    "email": "pricing@zahra-plast.example",
     "role": "Pricing Manager",
     "canOverride": true,
     "active": true
@@ -18,7 +18,7 @@
   {
     "id": "u-sales",
     "name": "Demo Billing User",
-    "email": "sales@zehra-plast.example",
+    "email": "sales@zahra-plast.example",
     "role": "Sales / Billing",
     "canOverride": true,
     "active": true
@@ -26,7 +26,7 @@
   {
     "id": "u-finance",
     "name": "Demo Finance User",
-    "email": "finance@zehra-plast.example",
+    "email": "finance@zahra-plast.example",
     "role": "Finance",
     "canOverride": false,
     "active": true

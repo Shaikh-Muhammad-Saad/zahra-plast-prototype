@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => { await login(page); });
 
 async function workspace(page: Page): Promise<AppState> {
   return page.evaluate(() => new Promise((resolve, reject) => {
-    const opening = indexedDB.open('zehra-plast-local', 1);
+    const opening = indexedDB.open('zahra-plast-local', 1);
     opening.onerror = () => reject(opening.error);
     opening.onsuccess = () => {
       const db = opening.result;
@@ -59,7 +59,7 @@ test('spreadsheet preview rejects invalid rows and imports only validated pricin
 test('an existing approval-enabled workspace holds proposed rules until review', async ({ page }) => {
   // Existing/restored workspaces retain their pricing policy after Settings is removed.
   await page.evaluate(() => new Promise<void>((resolve, reject) => {
-    const opening = indexedDB.open('zehra-plast-local', 1);
+    const opening = indexedDB.open('zahra-plast-local', 1);
     opening.onerror = () => reject(opening.error);
     opening.onsuccess = () => {
       const db = opening.result;

@@ -1,6 +1,6 @@
 import { DEMO_ACCOUNT } from '../../../database/auth';
 
-export const AUTH_STORAGE_KEY = 'zehra-plast.auth.v1';
+export const AUTH_STORAGE_KEY = 'zahra-plast.auth.v1';
 export const SESSION_DURATION = 8 * 60 * 60 * 1000;
 export interface AuthSession { version: 1; accountId: string; expiresAt: number; token: string; }
 

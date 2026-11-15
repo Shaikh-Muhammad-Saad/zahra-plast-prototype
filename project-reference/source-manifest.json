@@ -1,7 +1,7 @@
 {
   "review_date": "2026-11-16",
-  "project_name": "Zehra Plast",
-  "previous_project_name": "Zehra Plus",
+  "project_name": "Zahra Plast",
+  "previous_project_name": "Zahra Plus",
   "client_name_in_sources": "Zahra Plast",
   "review_scope": "All 6 scope pages and all 20 catalog pages read as text and visually reviewed; all 317 catalog rows cross-checked.",
   "documents": [
@@ -21,7 +21,7 @@
     }
   ],
   "artifacts": {
-    "main_memory": "../ZEHRA_PLUS_PROJECT_MEMORY.txt",
+    "main_memory": "../ZAHRA_PLUS_PROJECT_MEMORY.txt",
     "product_index": "catalog.json",
     "counts_and_catalog_page_ranges": "catalog-counts.json",
     "full_scope_text": "source-text/scope.txt",
