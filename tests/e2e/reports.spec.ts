@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { login } from './helpers/auth';
 import { readFile } from 'node:fs/promises';
+
+test.beforeEach(async ({ page }) => { await login(page); });
 
 test('brand discounts honor customer/date filters and export numeric summaries', async ({ page }) => {
   await page.goto('/reports');

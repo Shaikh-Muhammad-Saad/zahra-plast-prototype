@@ -1,10 +1,57 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, ShieldCheck, Sparkles } from 'lucide-react';
-import { useApp } from '../../state/AppProvider';
-import { initials } from '../../lib/format';
-import { Button } from '../../components/ui';
+import { useState, type FormEvent } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { ArrowRight, ArrowUpRight, Check, Eye, EyeOff, Layers3, LockKeyhole, Mail, Package, ReceiptText } from 'lucide-react';
+import { DEMO_ACCOUNT } from '../../../database/auth';
+import { Button, Field } from '../../components/ui';
+import { useAuth } from './AuthProvider';
+import { loginDestination } from './session';
+import './auth.css';
+
 export default function LoginPage() {
-  const { state, actions } = useApp(); const navigate = useNavigate(); const [selected, setSelected] = useState(state.currentUserId); const [error, setError] = useState('');
-  return <main className="login-page"><section className="login-story"><div className="brand brand-light"><span className="brand-mark">Z</span><span>Zehra Plast<small>BUSINESS WORKSPACE</small></span></div><div className="login-copy"><span className="login-kicker"><Sparkles size={16} />A LITTLE MORE CLARITY</span><h1>Good business.<br />Thoughtfully<br /><em>organized.</em></h1><p>Your products, customer agreements, and daily billing, working beautifully together.</p><div className="login-proof"><span><Check size={16} />317 source products</span><span><Check size={16} />8 catalog brands</span></div></div><small>Built around your business. Ready to grow with you.</small></section><section className="login-panel"><div className="login-form"><span className="eyebrow">WELCOME TO YOUR WORKSPACE</span><h2>Let’s get to work.</h2><p className="text-muted">Choose a sample account to explore the experience.</p><div className="login-accounts">{state.users.filter(u => u.active).map(u => <button key={u.id} className={`login-account ${selected === u.id ? 'selected' : ''}`} onClick={() => setSelected(u.id)}><span className="avatar avatar-green">{initials(u.name)}</span><span><strong>{u.name}</strong><small>{u.role}</small></span><span className="radio-indicator">{selected === u.id && <Check size={12} />}</span></button>)}</div>{error && <p className="error-message">{error}</p>}<Button variant="primary" className="login-submit" onClick={() => { try { actions.switchUser(selected); navigate('/'); } catch (e) { setError((e as Error).message); } }}>Open workspace<ArrowRight size={18} /></Button><div className="login-disclosure"><ShieldCheck size={18} /><p>This is a local frontend preview. Accounts demonstrate role permissions; no password or server sign-in is connected.</p></div></div></section></main>;
+  const { authenticated, login } = useAuth();
+  const location = useLocation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  if (authenticated) return <Navigate to={loginDestination(location.state?.from)} replace />;
+  function submit(event: FormEvent) {
+    event.preventDefault(); setError('');
+    try { login(email, password); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to log in. Please try again.'); }
+  }
+  return <main className="auth-page">
+    <section className="auth-story" aria-label="Zehra Plast workspace">
+      <div className="auth-brand"><span className="auth-brand-symbol"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 8h18L8 24h17M9 16h15" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Zehra Plast<small>BUSINESS WORKSPACE</small></span></div>
+      <div className="auth-story-content">
+        <span className="auth-kicker"><span /> YOUR EVERYDAY BUSINESS, CONNECTED</span>
+        <h1>Everything in place.<br /><em>Room to grow.</em></h1>
+        <p>Bring your products, customer pricing, and daily billing into one organized workspace.</p>
+        <div className="auth-workspace-card" aria-hidden="true">
+          <div className="auth-card-heading"><span><Layers3 size={18} />A clearer working day</span><ArrowUpRight size={18} /></div>
+          <div className="auth-feature-row"><span className="auth-feature-icon"><Package size={20} /></span><div><strong>Your product library</strong><small>Every product and price, together.</small></div><Check size={16} /></div>
+          <div className="auth-feature-row"><span className="auth-feature-icon"><ReceiptText size={20} /></span><div><strong>From agreement to invoice</strong><small>Customer pricing that carries through.</small></div><Check size={16} /></div>
+          <div className="auth-card-footer"><span className="auth-online-dot" />Built around the way you work</div>
+        </div>
+      </div>
+      <p className="auth-story-footer">A little less admin. A little more clarity.</p>
+    </section>
+    <section className="auth-panel" aria-label="Log in">
+      <div className="auth-form-wrap">
+        <div className="auth-welcome-icon"><LockKeyhole size={25} /></div>
+        <span className="auth-form-eyebrow">WELCOME BACK</span>
+        <h2>Log in to your workspace</h2>
+        <p className="auth-intro">Your business is ready when you are.</p>
+        <form className="auth-form" onSubmit={submit}>
+          <Field label="Email address"><div className="auth-input-wrap"><Mail size={19} aria-hidden="true" /><input className="input" type="email" name="email" autoComplete="username" required autoFocus placeholder="you@example.com" value={email} onChange={event => { setEmail(event.target.value); setError(''); }} aria-invalid={!!error} aria-describedby={error ? 'login-error' : undefined} /></div></Field>
+          <Field label="Password"><div className="auth-input-wrap"><LockKeyhole size={19} aria-hidden="true" /><input className="input" type={showPassword ? 'text' : 'password'} name="password" autoComplete="current-password" required placeholder="Enter your password" value={password} onChange={event => { setPassword(event.target.value); setError(''); }} aria-invalid={!!error} aria-describedby={error ? 'login-error' : undefined} /><button className="auth-password-toggle" type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></Field>
+          {error && <p className="error-message" id="login-error" role="alert">{error}</p>}
+          <Button type="submit" variant="primary" className="auth-submit">Log in<ArrowRight size={19} /></Button>
+        </form>
+        <div className="auth-demo-credentials"><div><span className="auth-demo-dot" /><strong>Demo login details</strong><span>Ready to try</span></div><dl><div><dt>Email</dt><dd><code>{DEMO_ACCOUNT.email}</code></dd></div><div><dt>Password</dt><dd><code>{DEMO_ACCOUNT.password}</code></dd></div></dl></div>
+        <p className="auth-local-note">This frontend demo uses a local sign-in. Your workspace data stays in this browser.</p>
+      </div>
+      <p className="auth-panel-footer">&copy; {new Date().getFullYear()} Zehra Plast</p>
+    </section>
+  </main>;
 }

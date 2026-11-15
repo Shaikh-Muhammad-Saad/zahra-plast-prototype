@@ -1,6 +1,6 @@
 # Zehra Plast user guide
 
-Open the local address printed by `npm run dev`. The overview presents your source catalog and sample business activity. Click Workspace guide in the sidebar for help inside the app.
+Open the local address printed by `npm run dev` and log in with **admin@zehraplast.com** / **Zehra@123**. The same credentials are displayed below the login button. The overview presents your source catalog and sample business activity.
 
 ## Catalog and people
 
@@ -30,10 +30,10 @@ In Import & export, choose the record type and download its CSV or Excel templat
 
 For a price update, select New rate list and supply a new effective date after the latest version. Existing customer rules and invoice snapshots stay unchanged.
 
-Export sheets for individual masters, saved rules, the resolved complete matrix, or a customer price sheet. A JSON workspace backup includes all records, settings, and audit history. Wait for Saved on this device before closing the tab. Use Restore backup to replace a local workspace after reviewing the confirmation.
+In Export & backup, choose PDF for a paginated document or Excel for an editable workbook. PDF exports include all records, repeated table headings and page numbers; the complete matrix is grouped by customer. Large PDFs are prepared in the background with progress shown on the page. Other report and pricing screens retain their own export options. A JSON workspace backup includes all records, settings, and audit history. Changes save automatically; any storage failure appears as an alert. Keep a backup before clearing browser data or moving devices. Use Restore backup to replace a local workspace after reviewing the confirmation.
 
-## Roles and settings
+## Sign-in and workspace data
 
-Admin controls company details, team permissions, approval policies, override reasons, and optional matrix promotion. Pricing Manager maintains agreements and approvals. Sales / Billing creates documents and may override when granted. Finance has view-only access.
+The single workspace account can maintain products, customers, customer pricing, and documents. Company details and pricing policies use workspace defaults or values retained in a restored backup. Settings, role switching, and team controls are not part of the current UI.
 
-The account menu switches between sample roles for testing. This frontend has no real sign-in service. Runtime data belongs to the current browser/device; the seed files in `database/` remain unchanged. Avoid concurrent editing in multiple tabs, and keep exported backups of work you want to retain.
+The account dropdown contains Log out. Workspace routes redirect to the login screen when signed out; logging in returns to the page you requested. Sessions last eight hours and survive refresh. Logging out signs out other open tabs without deleting business data. This is local demo authentication, not server-enforced security. Runtime data belongs to the current browser/device; seed files in `database/` remain unchanged. Avoid concurrent editing in multiple tabs, and keep exported backups of work you want to retain.

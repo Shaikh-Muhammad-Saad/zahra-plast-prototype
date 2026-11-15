@@ -8,7 +8,7 @@
 
 Runtime changes are saved only in this browser's IndexedDB database `zehra-plast-local`. No external database or backend is connected. Writes are atomic and serialized, and pending full snapshots are coalesced so large imports can support the initial 47,550-rule matrix. The header reports saving, saved or a persistent save error. Changes are in memory until the save finishes; export a backup if an error occurs. A loading boundary waits for persisted data before opening the workspace. Existing `zehra-plast.workspace.v1` localStorage data is migrated when no IndexedDB workspace exists, and the original legacy key is left intact.
 
-Local changes do not overwrite these seed files and are not shared between browsers. Backups can be exported/imported in Settings. Clearing browser storage removes local changes. The role selector demonstrates permissions; it is not server authentication. Avoid concurrent editing in multiple tabs; this prototype does not provide multi-user synchronization.
+Local changes do not overwrite these seed files and are not shared between browsers. Backups can be exported/imported from Import & export. Clearing browser storage removes local changes. `auth.ts` contains the public demo credentials shown on the login screen. The single account uses an eight-hour browser session under `zehra-plast.auth.v1`, separate from workspace backups. This frontend gate is not server authentication. Legacy user records remain for backup/audit compatibility, but they cannot be selected or used to sign in. Avoid concurrent editing in multiple tabs; this prototype does not provide multi-user synchronization.
 
 ## Documented prototype decisions
 
@@ -20,7 +20,7 @@ Local changes do not overwrite these seed files and are not shared between brows
 - Unit prices round to two decimals, then extended line amounts to two decimals. Totals sum rounded lines. No tax configuration is assumed.
 - Overrides have no additional managerial percentage cap, but finite 0–100 percentages and positive fixed prices maintain meaningful amounts.
 - Quote conversion keeps quoted rates and discounts. The invoice date is the quote date initially; this makes the carried snapshot explicit until a future agreed repricing policy exists.
-- Approval workflow is off initially; enabling it queues every matrix change. The demo allows a Pricing Manager/Admin to review a request, including their own.
+- Approval workflow is off initially; enabling it queues every matrix change. The signed-in account can review requests, including its own.
 - Credit notes retain original pricing and permit partial quantities, bounded by quantities not already credited. Controlled reversal keeps the original document in the audit trail.
 - The optional Save to matrix action is off and separately permission-controlled; saving invoices never invokes it.
 

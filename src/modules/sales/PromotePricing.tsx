@@ -10,7 +10,7 @@ export function PromotePricing({ document }: { document: SalesDocument }) {
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState('');
   const overridden = document.lines.filter(line => line.override);
-  if (!state.settings.allowSaveToMatrix || user.role !== 'Pricing Manager' || !overridden.length || document.kind === 'Credit Note') return null;
+  if (!state.settings.allowSaveToMatrix || !overridden.length || document.kind === 'Credit Note') return null;
   const promote = () => {
     try {
       const timestamp = new Date().toISOString();

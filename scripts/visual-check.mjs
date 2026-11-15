@@ -5,7 +5,12 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
-for (const [path, name] of [['/', 'overview'], ['/products', 'catalog'], ['/pricing', 'pricing'], ['/invoices', 'invoices'], ['/transfers', 'transfers'], ['/settings', 'settings']]) {
+await page.goto('http://127.0.0.1:5173/login');
+await page.locator('input[type="email"]').fill('admin@zehraplast.com');
+await page.locator('input[type="password"]').fill('Zehra@123');
+await page.getByRole('button', { name: 'Log in', exact: true }).click();
+await page.waitForURL('http://127.0.0.1:5173/');
+for (const [path, name] of [['/', 'overview'], ['/products', 'catalog'], ['/pricing', 'pricing'], ['/invoices', 'invoices'], ['/transfers', 'transfers']]) {
   await page.goto(`http://127.0.0.1:5173${path}`);
   await page.locator('h1').waitFor();
   await page.evaluate(() => document.fonts.ready);

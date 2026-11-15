@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, FileText, PackagePlus, Percent, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { Badge, Button, Field, Modal } from '../../components/ui';
+import { useModalClose } from '../../components/ui/useModalClose';
 import { useApp } from '../../state/AppProvider';
 import { resolvePrice } from '../../lib/pricing';
 import type { DocumentLine, Price, Product, SalesDocument } from '../../types';
@@ -13,11 +14,17 @@ import { newLine } from './sales-utils';
 
 export function DocumentEditor({ document, onClose, onSaved }: { document: SalesDocument; onClose: () => void; onSaved: (document: SalesDocument) => void }) {
   const { state, can, actions, notify } = useApp();
+  const { open, close, onExited, isClosing } = useModalClose();
   const [draft, setDraft] = useState<SalesDocument>(() => structuredClone(document));
   const [overrideTarget, setOverrideTarget] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [discardPrompt, setDiscardPrompt] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const requestClose = () => {
+    if (isClosing()) return;
+    if (dirty) setDiscardPrompt(true);
+    else close(onClose);
+  };
   const isCredit = draft.kind === 'Credit Note';
   const overrideCount = draft.lines.filter(line => line.override).length;
   const customer = state.customers.find(item => item.id === draft.customerId);
@@ -44,6 +51,7 @@ export function DocumentEditor({ document, onClose, onSaved }: { document: Sales
     setOverrideTarget(null);
   };
   const save = (post = false) => {
+    if (isClosing()) return;
     if (!draft.customerId) { setError('Choose a customer before saving.'); return; }
     if (!draft.date) { setError('Choose a document date.'); return; }
     if (!draft.lines.length) { setError('Add at least one product to this document.'); return; }
@@ -55,19 +63,19 @@ export function DocumentEditor({ document, onClose, onSaved }: { document: Sales
       if (post && draft.kind === 'Quote') {
         const invoice = actions.convertQuote(saved.id);
         notify(`Invoice ${invoice.number} created with the saved quote pricing.`, 'success');
-        onSaved(invoice);
+        close(() => onSaved(invoice));
         return;
       }
       if (post) actions.postDocument(saved.id);
       notify(post ? `${saved.kind} ${saved.number} posted and locked.` : `${saved.kind} ${saved.number} saved as a draft.`, 'success');
-      onSaved(post ? { ...saved, status: 'Posted' } : saved);
+      close(() => onSaved(post ? { ...saved, status: 'Posted' } : saved));
     } catch (cause) { setError((cause as Error).message); }
   };
 
 
-  return <Modal open title={draft.number || `New ${draft.kind.toLowerCase()}`} description={isCredit ? 'Return quantities use the original invoice’s rate and discount.' : 'Customer pricing is applied automatically. Every exception is traceable.'} onClose={() => dirty ? setDiscardPrompt(true) : onClose()} wide footer={<div className="sales-editor-footer"><div className="sales-protection"><ShieldCheck size={17} aria-hidden="true" /><span>Saved customer pricing stays protected</span></div><div className="row"><Button variant="ghost" onClick={() => dirty ? setDiscardPrompt(true) : onClose()}>Cancel</Button><Button variant="secondary" onClick={() => save()}><Save size={16} /> Save draft</Button><Button variant="primary" onClick={() => save(true)}><Check size={16} />{draft.kind === 'Quote' ? 'Save & create invoice' : isCredit ? 'Post credit note' : 'Post invoice'}</Button></div></div>}>
+  return <Modal open={open} onExited={onExited} title={draft.number || `New ${draft.kind.toLowerCase()}`} description={isCredit ? 'Return quantities use the original invoice’s rate and discount.' : 'Customer pricing is applied automatically. Every exception is traceable.'} onClose={requestClose} wide footer={<div className="sales-editor-footer"><div className="sales-protection"><ShieldCheck size={17} aria-hidden="true" /><span>Saved customer pricing stays protected</span></div><div className="row"><Button variant="ghost" onClick={requestClose}>Cancel</Button><Button variant="secondary" onClick={() => save()}><Save size={16} /> Save draft</Button><Button variant="primary" onClick={() => save(true)}><Check size={16} />{draft.kind === 'Quote' ? 'Save & create invoice' : isCredit ? 'Post credit note' : 'Post invoice'}</Button></div></div>}>
     <div className="sales-editor">
-      {discardPrompt && <div className="sales-confirm-box"><div><strong>Discard your unsaved changes?</strong><p>Your last saved draft, if any, will remain unchanged.</p></div><div className="row"><Button size="sm" variant="secondary" onClick={() => setDiscardPrompt(false)}>Keep editing</Button><Button size="sm" variant="danger" onClick={onClose}>Discard changes</Button></div></div>}
+      {discardPrompt && <div className="sales-confirm-box"><div><strong>Discard your unsaved changes?</strong><p>Your last saved draft, if any, will remain unchanged.</p></div><div className="row"><Button size="sm" variant="secondary" onClick={() => setDiscardPrompt(false)}>Keep editing</Button><Button size="sm" variant="danger" onClick={() => close(onClose)}>Discard changes</Button></div></div>}
       <div className="sales-editor-meta">
         <Field label="Customer *" hint={draft.lines.length > 0 && !isCredit ? 'Remove lines first to change the customer.' : undefined}><select className="select" value={draft.customerId} disabled={draft.lines.length > 0 || isCredit} onChange={event => { const selected = state.customers.find(item => item.id === event.target.value); update({ customerId: event.target.value, customerName: selected?.name ?? '' }); }}><option value="">Select a customer</option>{state.customers.filter(item => item.status === 'Active' || item.id === draft.customerId).map(item => <option key={item.id} value={item.id}>{item.name} · {item.code}</option>)}</select></Field>
         <Field label={`${draft.kind === 'Quote' ? 'Quote' : 'Document'} date *`} hint={draft.lines.length && !isCredit ? 'Rate date is fixed while lines are present.' : undefined}><input className="input" type="date" value={draft.date} disabled={draft.lines.length > 0 || isCredit} onChange={event => update({ date: event.target.value })} /></Field>

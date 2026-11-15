@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { login } from './helpers/auth';
+
+test.beforeEach(async ({ page }) => { await login(page); });
 
 test('the full catalog is searchable, source details are preserved, and photos load', async ({ page }) => {
   await page.goto('/products');
@@ -15,7 +18,7 @@ test('the full catalog is searchable, source details are preserved, and photos l
   await expect(page.getByRole('dialog')).toContainText('Cost price');
 });
 
-test('customer creation persists and can be found through the global search', async ({ page }) => {
+test('customer creation persists and can be found through the customer search', async ({ page }) => {
   await page.goto('/customers');
   await page.getByRole('button', { name: 'Add customer', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Add a customer' });
@@ -25,37 +28,28 @@ test('customer creation persists and can be found through the global search', as
   await expect(dialog).not.toBeVisible();
   await expect(page.getByText('Workspace storage: saved', { exact: true })).toBeAttached();
   await page.reload();
-  await page.getByRole('button', { name: /Search anything/ }).click();
-  await page.getByRole('textbox', { name: 'Search workspace', exact: true }).fill('QA-CUSTOMER-001');
-  await page.getByRole('button', { name: /QA Customer Record.*QA-CUSTOMER-001/ }).click();
-  await expect(page.getByRole('searchbox', { name: 'Search customers or codes…' })).toHaveValue('QA-CUSTOMER-001');
+  await page.getByRole('searchbox', { name: /Search customers or codes/ }).fill('QA-CUSTOMER-001');
   await expect(page.getByRole('table')).toContainText('QA Customer Record');
 });
 
-test('Finance can inspect reports but cannot edit masters or create invoices', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByRole('button', { name: /Finance/ }).click();
-  await page.getByRole('button', { name: 'Open workspace' }).click();
-  await expect(page.getByRole('heading', { name: 'Business overview' })).toBeVisible();
+test('the workspace account can maintain products without removed sidebar controls', async ({ page }) => {
   await page.goto('/products');
-  await expect(page.getByRole('heading', { name: 'Product catalog' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Add product', exact: true })).toHaveCount(0);
-  await page.goto('/invoices');
-  await expect(page.getByRole('button', { name: /New invoice|Create invoice/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Add product', exact: true })).toBeVisible();
   await page.goto('/settings');
-  await expect(page.getByRole('button', { name: 'Save settings', exact: true })).toBeDisabled();
-  await page.goto('/reports');
-  await expect(page.getByRole('heading', { name: 'Reports & analytics' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
+  await expect(page.locator('.sidebar').getByRole('link', { name: 'Settings', exact: true })).toHaveCount(0);
+  await expect(page.locator('.sidebar .workspace-note')).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Role', exact: true })).toHaveCount(0);
 });
 
 test('all modules render without runtime errors and mobile pages stay within the viewport', async ({ page }) => {
   test.setTimeout(90_000);
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  for (const route of ['/', '/products', '/customers', '/suppliers', '/pricing', '/quotes', '/invoices', '/reports', '/audit', '/transfers', '/settings', '/help']) {
+  for (const route of ['/', '/products', '/customers', '/suppliers', '/pricing', '/quotes', '/invoices', '/reports', '/audit', '/transfers']) {
     await page.goto(route); await expect(page.locator('h1')).toBeVisible();
   }
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const route of ['/', '/products', '/customers', '/suppliers', '/reports', '/settings', '/help']) {
+  for (const route of ['/', '/products', '/customers', '/suppliers', '/reports']) {
     await page.goto(route); await expect(page.locator('h1')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);

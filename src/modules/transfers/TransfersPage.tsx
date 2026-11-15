@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowDownToLine, ArrowRight, Check, CheckCircle2, ChevronRight, Database, FileCheck2, FileSpreadsheet, FileUp, History, Info, Layers3, Package, RotateCcw, ShieldCheck, Tag, Upload, Users, X, XCircle } from 'lucide-react';
+import { ArrowDownToLine, ArrowRight, Check, CheckCircle2, ChevronRight, Database, FileCheck2, FileSpreadsheet, FileText, FileUp, History, Info, Layers3, Package, RotateCcw, ShieldCheck, Tag, Upload, Users, X, XCircle } from 'lucide-react';
 import { useApp } from '../../state/AppProvider';
 import { Badge, Button, EmptyState, Modal, PageHeader } from '../../components/ui';
 import { downloadText, number, shortDate, today, uid } from '../../lib/format';
@@ -7,6 +7,8 @@ import { effectiveRate, resolvePrice, unitNet } from '../../lib/pricing';
 import { exportRows, exportSpreadsheet, parseSpreadsheet, parseWorkspaceBackup, sheetColumns, validateImport } from '../../lib/spreadsheets';
 import type { ImportResult, SheetRow, TransferKind } from '../../lib/spreadsheets';
 import type { AppState, Customer, DiscountRule, Product, Supplier } from '../../types';
+import { downloadPdf } from '../../lib/pdfExport';
+import { buildTransferPdf, type TransferPdfKind } from './pdfExportData';
 import './transfers.css';
 
 const destinations: { key: TransferKind; title: string; detail: string; icon: typeof Package }[] = [
@@ -26,6 +28,7 @@ export default function TransfersPage() {
   const [rawRows, setRawRows] = useState<SheetRow[]>([]);
   const [results, setResults] = useState<ImportResult[]>([]);
   const [busy, setBusy] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState('');
   const [error, setError] = useState('');
   const [previewFilter, setPreviewFilter] = useState<'all' | 'valid' | 'invalid'>('all');
   const [page, setPage] = useState(1);
@@ -62,6 +65,17 @@ export default function TransfersPage() {
     try { await exportSpreadsheet(`zehra-plast-${target}`, exportRows(target, state), format); notify('Your export is ready.', 'success'); }
     catch (cause) { notify(getError(cause), 'error'); }
     finally { setBusy(false); }
+  }
+  async function exportPdf(target: TransferPdfKind) {
+    setBusy(true); setPdfProgress('Preparing your PDF...');
+    try {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await downloadPdf(buildTransferPdf(target, state), (completed, total) => {
+        setPdfProgress(completed === total ? 'Finishing your PDF...' : `Preparing your PDF: ${number(completed)} of ${number(total)} records`);
+      });
+      notify('Your PDF has been downloaded.', 'success');
+    } catch (cause) { notify(getError(cause), 'error'); }
+    finally { setBusy(false); setPdfProgress(''); }
   }
   async function exportCompleteMatrix(format: 'csv' | 'xlsx') {
     setBusy(true);
@@ -120,7 +134,7 @@ export default function TransfersPage() {
   }
 
   return <div className="page-stack transfers-page">
-    <PageHeader eyebrow="WORKSPACE DATA" title="Bring everything together." description="Move your catalog and customer agreements in and out of your workspace." actions={<Button variant="secondary" onClick={() => { downloadText('zehra-plast-workspace-backup.json', JSON.stringify(state), 'application/json'); notify('Workspace backup downloaded.', 'success'); }}><Database size={16} /> Back up workspace</Button>} />
+    <PageHeader eyebrow="WORKSPACE DATA" title="Bring everything together." description="Move your catalog and customer agreements in and out of your workspace." />
     <div className="transfer-navigation" role="tablist" aria-label="Data tools"><button type="button" role="tab" aria-selected={tab === 'import'} className={tab === 'import' ? 'active' : ''} onClick={() => setTab('import')}><Upload size={16} /> Import data</button><button type="button" role="tab" aria-selected={tab === 'export'} className={tab === 'export' ? 'active' : ''} onClick={() => setTab('export')}><ArrowDownToLine size={16} /> Export & backup</button><button type="button" role="tab" aria-selected={tab === 'history'} className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}><History size={16} /> Rate list history <span>{state.rateVersions.length}</span></button></div>
     {tab === 'import' && <>
       <div className="transfer-steps"><span className="complete"><i>1</i> Choose your data</span><ChevronRight size={14} /><span className={results.length ? 'complete' : ''}><i>2</i> Upload & review</span><ChevronRight size={14} /><span className={applied ? 'complete' : ''}><i>{applied ? <Check size={13} /> : 3}</i> Apply changes</span></div>
@@ -129,7 +143,7 @@ export default function TransfersPage() {
         <section className="card"><div className="card-header"><div><h2>Import {selected.title.toLowerCase()}</h2><p className="text-small text-muted">Upload a spreadsheet, review every row, then apply your changes.</p></div><Badge tone="gray">CSV or XLSX</Badge></div><div className="card-body">
           <input ref={fileInput} type="file" accept=".csv,.xlsx" className="sr-only" tabIndex={-1} onChange={e => readFile(e.target.files?.[0])} />
           <button type="button" className={`transfer-dropzone ${busy ? 'busy' : ''}`} disabled={busy || !permitted} onClick={() => fileInput.current?.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (permitted && !busy) readFile(e.dataTransfer.files[0]); }}><span className="transfer-upload-icon">{filename ? <FileCheck2 size={28} /> : <FileUp size={28} />}</span><strong>{busy ? 'Reading your spreadsheet…' : filename || 'Choose a file or drop it here'}</strong><span>{filename ? `${number(rawRows.length)} data rows found · Click to choose another file` : 'Excel workbooks and UTF-8 CSV files, up to 10 MB'}</span>{!filename && <span className="transfer-browse">Browse files <ArrowRight size={14} /></span>}</button>
-          {!permitted && <div className="transfer-inline-info"><ShieldCheck size={17} /><span>Your role can review and export data. Importing this data requires {kind === 'discounts' ? 'Pricing Manager' : 'Admin'} access.</span></div>}
+          {!permitted && <div className="transfer-inline-info"><ShieldCheck size={17} /><span>Importing is unavailable for this session. You can still review and export data.</span></div>}
           {error && <div className="error-message" role="alert">{error}</div>}
           {importSummary && <div className="transfer-success" role="status"><CheckCircle2 size={19} /><div><strong>{importSummary}</strong><span>Existing invoices retain their original prices and discounts.</span></div></div>}
           <div className="transfer-template-row"><span><FileSpreadsheet size={17} /> Start with the right columns</span><div className="row"><Button variant="ghost" size="sm" onClick={() => downloadTemplate('csv')}>CSV template <ArrowDownToLine size={14} /></Button><Button variant="ghost" size="sm" onClick={() => downloadTemplate('xlsx')}>Excel template <ArrowDownToLine size={14} /></Button></div></div>
@@ -144,10 +158,11 @@ export default function TransfersPage() {
       </section>}
     </>}
     {tab === 'export' && <>
+      {pdfProgress && <div className="transfer-inline-info" role="status"><FileText size={17} /><span>{pdfProgress}</span></div>}
       <div className="transfer-export-grid">{destinations.map(({ key, title, detail, icon: Icon }) => {
         const count = key === 'products' || key === 'rates' ? state.products.length : key === 'customers' ? state.customers.length : key === 'suppliers' ? state.suppliers.length : state.rules.length;
-        return <section className="card transfer-export-card" key={key}><div className="transfer-export-icon"><Icon size={23} /></div><h2>{key === 'rates' ? 'Current rate list' : title}</h2><p className="text-small text-muted">{detail}</p><div className="transfer-export-count"><strong>{number(count)}</strong><span>records</span></div><div className="row"><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportData(key, 'csv')}><ArrowDownToLine size={14} /> CSV</Button><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportData(key, 'xlsx')}><FileSpreadsheet size={14} /> Excel</Button></div></section>;
-      })}<section className="card transfer-export-card"><div className="transfer-export-icon"><Tag size={23} /></div><h2>Complete customer matrix</h2><p className="text-small text-muted">Resolved prices for every customer and product</p><div className="transfer-export-count"><strong>{number(state.customers.length * state.products.length)}</strong><span>combinations</span></div><div className="row"><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportCompleteMatrix('csv')}><ArrowDownToLine size={14} /> CSV</Button><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportCompleteMatrix('xlsx')}><FileSpreadsheet size={14} /> Excel</Button></div></section></div>
+        return <section className="card transfer-export-card" key={key}><div className="transfer-export-icon"><Icon size={23} /></div><h2>{key === 'rates' ? 'Current rate list' : title}</h2><p className="text-small text-muted">{detail}</p><div className="transfer-export-count"><strong>{number(count)}</strong><span>records</span></div><div className="row"><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportPdf(key)}><FileText size={14} /> PDF</Button><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportData(key, 'xlsx')}><FileSpreadsheet size={14} /> Excel</Button></div></section>;
+      })}<section className="card transfer-export-card"><div className="transfer-export-icon"><Tag size={23} /></div><h2>Complete customer matrix</h2><p className="text-small text-muted">Resolved prices for every customer and product</p><div className="transfer-export-count"><strong>{number(state.customers.length * state.products.length)}</strong><span>combinations</span></div><div className="row"><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportPdf('matrix')}><FileText size={14} /> PDF</Button><Button size="sm" variant="secondary" disabled={busy} onClick={() => exportCompleteMatrix('xlsx')}><FileSpreadsheet size={14} /> Excel</Button></div></section></div>
       <section className="card"><div className="card-header"><div><h2>Keep a copy of your workspace</h2><p className="text-small text-muted">A complete backup includes all masters, pricing rules, documents, settings, and audit history.</p></div><Database size={22} /></div><div className="card-body transfer-backup-actions"><div><strong>Workspace backup</strong><p className="text-small text-muted">Save a JSON file before clearing browser data or moving to another device.</p></div><Button variant="primary" onClick={() => downloadText('zehra-plast-workspace-backup.json', JSON.stringify(state), 'application/json')}><ArrowDownToLine size={16} /> Download backup</Button></div><div className="card-body transfer-backup-actions transfer-restore"><div><strong>Restore a previous backup</strong><p className="text-small text-muted">Restore a JSON backup up to 100 MB. Download your current backup before replacing it.</p></div><Button variant="secondary" disabled={!can('settings')} onClick={() => backupInput.current?.click()}><RotateCcw size={15} /> Restore backup</Button><input type="file" className="sr-only" tabIndex={-1} ref={backupInput} accept=".json" onChange={e => readBackup(e.target.files?.[0])} /></div></section>
       <div className="transfer-inline-info"><Info size={17} /><span>Product and supplier names come from the source catalog. Customer records and pricing agreements marked sample are demonstration data.</span></div>
     </>}

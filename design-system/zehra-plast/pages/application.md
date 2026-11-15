@@ -2,13 +2,15 @@
 
 This application-specific interpretation applies to every administration route. The generated master supplies verified data-dense dashboard guidance; its generic marketing/enterprise gateway pattern is not used for this internal admin application.
 
-- Palette: forest green primary `#176b54`, warm-neutral surface `#f5f7f6`, white cards, charcoal text `#1e2c2a`, muted text `#627167`. Semantic green/amber/red/blue states always carry visible labels.
-- Typography: bundled Inter Variable, clear 25-29px page titles, 12-14px operational content, tabular prices. Secondary metadata remains readable; core actions and table cells are not tiny decorative text.
+- Palette: forest green primary `#16664f`, dark navigation `#153c31` with light mint active states, warm-neutral surface `#f2f5f3`, white cards, charcoal text `#202e2a`. Semantic green/amber/red/blue states always carry visible labels.
+- Typography: bundled Inter Variable, 28-33px page titles, 13-14px operational content and 11-12px metadata, tabular prices. Neutral text has stronger contrast; green is reserved for navigation, actions and meaningful states.
 - Structure: persistent 238px sidebar, compact topbar, clear page title/actions, responsive content cards. Feature modules share the same form, dialog, button and badge primitives.
 - Catalog: actual source photographs, no invented substitute images. Show missing data and inactive states explicitly.
 - Interaction: keyboard focus rings, native labeled controls, native modal dialogs, accessible button names, reversible forms, meaningful validation, and save feedback.
 - Responsive: sidebar becomes an accessible drawer; cards stack; wide data tables scroll within their own container without widening the page.
-- Motion: restrained state transitions, no decorative movement, reduced-motion support. Charts have meaningful names, tooltips and a report/table alternative.
-- Product honesty: clearly mark sample accounts/customer agreements/transactions; display local save status and persistence errors. Do not show invented growth percentages or payment balances.
+- Motion: shared dialogs fade and gently rise/scale in over 240ms, with a quicker 160ms exit and a fading backdrop. Keep content mounted through exit, preserve unsaved-change confirmations, and skip motion when reduced motion is requested. Printed documents always use their full-opacity, untransformed layout. Charts have meaningful names, tooltips and a report/table alternative.
+- Product honesty: clearly mark sample accounts/customer agreements/transactions; announce local save status accessibly and display persistence errors. Do not show invented growth percentages or payment balances.
 
-Implementation tokens and shared styles live in `src/styles/global.css`. Module styles are limited to pricing, sales, and import layouts.
+The November refinement uses the verified `data-dense-dashboard` style result for enterprise admin tables: neutral surfaces, clear KPI hierarchy, readable density and restrained interaction feedback. The search's marketing/glassmorphism recommendation was rejected as unsuitable for everyday data entry.
+
+Implementation primitives live in `src/styles/global.css`; `src/styles/refinements.css` supplies the current shared visual system. Forms use 43px controls on desktop and 44px on mobile. Tables retain local horizontal scrolling, cards use consistent 12-13px radii and restrained shadows, and the dark sidebar separates navigation from working content. Login styling is maintained in the authentication module.

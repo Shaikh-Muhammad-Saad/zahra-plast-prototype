@@ -1,0 +1,48 @@
+/* One motion rhythm for every workspace dialog. Transform avoids layout shifts. */
+dialog.modal {
+  --modal-enter-duration: 240ms;
+  --modal-exit-duration: 160ms;
+  opacity: 0;
+  transform: translateY(14px) scale(.975);
+  transform-origin: center;
+  transition-property: opacity, transform;
+  transition-duration: var(--modal-exit-duration);
+  transition-timing-function: cubic-bezier(.4, 0, 1, 1);
+}
+
+dialog.modal[data-state="open"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-duration: var(--modal-enter-duration);
+  transition-timing-function: cubic-bezier(.16, 1, .3, 1);
+}
+
+dialog.modal::backdrop {
+  opacity: 0;
+  transition: opacity var(--modal-exit-duration) ease-in;
+}
+
+dialog.modal[data-state="open"]::backdrop {
+  opacity: 1;
+  transition-duration: var(--modal-enter-duration);
+  transition-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.modal[data-state],
+  dialog.modal[data-state]::backdrop {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Printing must never capture a partially faded or scaled invoice. */
+@media print {
+  dialog.modal[open] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  dialog.modal::backdrop { transition: none !important; }
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, CornerDownLeft, FileCheck2, LockKeyhole, PencilLine, Printer, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Badge, Button, Field, Modal } from '../../components/ui';
+import { useModalClose } from '../../components/ui/useModalClose';
 import { useApp } from '../../state/AppProvider';
 import { discountAmount, lineTotal, sellingQuantity, unitNet } from '../../lib/pricing';
 import { money, shortDate } from '../../lib/format';
@@ -11,20 +12,21 @@ import { priceLabel, statusTone } from './sales-utils';
 
 export function DocumentPreview({ document, onClose, onEdit, onOpenCreated }: { document: SalesDocument; onClose: () => void; onEdit: () => void; onOpenCreated: (document: SalesDocument) => void }) {
   const { state, can, actions, notify } = useApp();
+  const { open, close, onExited, isClosing } = useModalClose();
   const [operation, setOperation] = useState<'credit' | 'reverse' | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const customer = state.customers.find(item => item.id === document.customerId);
   const original = state.documents.find(item => item.id === document.sourceDocumentId);
   const related = state.documents.filter(item => item.sourceDocumentId === document.id);
-  const run = (action: () => void) => { try { setError(''); action(); } catch (cause) { setError((cause as Error).message); } };
+  const run = (action: () => void) => { if (isClosing()) return; try { setError(''); action(); } catch (cause) { setError((cause as Error).message); } };
   const confirmOperation = () => {
     if (!reason.trim()) { setError('Add a reason so this correction can be traced.'); return; }
     run(() => {
       if (operation === 'credit') {
         const credit = actions.creditDocument(document.id, reason.trim());
         notify('Credit note prepared with the original invoice pricing.', 'success');
-        onOpenCreated(credit);
+        close(() => onOpenCreated(credit));
       } else {
         actions.reverseDocument(document.id, reason.trim());
         notify('Invoice reversed. Its original record is preserved.', 'success');
@@ -32,9 +34,9 @@ export function DocumentPreview({ document, onClose, onEdit, onOpenCreated }: { 
       }
     });
   };
-  return <Modal open title={document.number} description={`${document.kind} · ${shortDate(document.date)}`} onClose={onClose} wide footer={<div className="sales-preview-footer"><div className="sales-protection"><ShieldCheck size={17} /><span>{document.status === 'Draft' ? 'Draft values are preserved until explicitly changed.' : 'Issued pricing is preserved in this document.'}</span></div><div className="row"><Button variant="secondary" onClick={() => window.print()}><Printer size={16} /> Print / PDF</Button>{document.status === 'Draft' && can('billing') && <Button variant="primary" onClick={onEdit}><PencilLine size={16} /> Edit draft</Button>}</div></div>}>
+  return <Modal open={open} onExited={onExited} title={document.number} description={`${document.kind} · ${shortDate(document.date)}`} onClose={() => close(onClose)} wide footer={<div className="sales-preview-footer"><div className="sales-protection"><ShieldCheck size={17} /><span>{document.status === 'Draft' ? 'Draft values are preserved until explicitly changed.' : 'Issued pricing is preserved in this document.'}</span></div><div className="row"><Button variant="secondary" onClick={() => window.print()}><Printer size={16} /> Print / PDF</Button>{document.status === 'Draft' && can('billing') && <Button variant="primary" onClick={() => close(onEdit)}><PencilLine size={16} /> Edit draft</Button>}</div></div>}>
     <div className="sales-preview">
-      <div className="sales-document-actions no-print"><div className="row"><Badge tone={statusTone(document.status)}>{document.status}</Badge>{customer?.sample && <Badge tone="gray">Sample transaction</Badge>}{document.status === 'Posted' && <span className="sales-lock-note"><LockKeyhole size={14} /> Pricing locked</span>}</div><div className="row">{document.kind === 'Quote' && document.status === 'Draft' && can('billing') && <Button size="sm" variant="primary" onClick={() => run(() => { const invoice = actions.convertQuote(document.id); notify('Invoice created with the quote’s saved pricing.', 'success'); onOpenCreated(invoice); })}>Convert to invoice <ArrowRight size={16} /></Button>}{document.kind === 'Invoice' && document.status === 'Posted' && can('billing') && <><Button variant="secondary" size="sm" onClick={() => { setOperation('credit'); setReason(''); setError(''); }}><CornerDownLeft size={15} /> Return / credit note</Button><Button variant="ghost" size="sm" onClick={() => { setOperation('reverse'); setReason(''); setError(''); }}><RotateCcw size={15} /> Reverse</Button></>}{document.status === 'Draft' && document.kind !== 'Quote' && can('billing') && <Button size="sm" variant="secondary" onClick={() => run(() => { actions.postDocument(document.id); notify(`${document.kind} posted and locked.`, 'success'); })}><FileCheck2 size={16} />Post document</Button>}</div></div>
+      <div className="sales-document-actions no-print"><div className="row"><Badge tone={statusTone(document.status)}>{document.status}</Badge>{customer?.sample && <Badge tone="gray">Sample transaction</Badge>}{document.status === 'Posted' && <span className="sales-lock-note"><LockKeyhole size={14} /> Pricing locked</span>}</div><div className="row">{document.kind === 'Quote' && document.status === 'Draft' && can('billing') && <Button size="sm" variant="primary" onClick={() => run(() => { const invoice = actions.convertQuote(document.id); notify('Invoice created with the quote’s saved pricing.', 'success'); close(() => onOpenCreated(invoice)); })}>Convert to invoice <ArrowRight size={16} /></Button>}{document.kind === 'Invoice' && document.status === 'Posted' && can('billing') && <><Button variant="secondary" size="sm" onClick={() => { setOperation('credit'); setReason(''); setError(''); }}><CornerDownLeft size={15} /> Return / credit note</Button><Button variant="ghost" size="sm" onClick={() => { setOperation('reverse'); setReason(''); setError(''); }}><RotateCcw size={15} /> Reverse</Button></>}{document.status === 'Draft' && document.kind !== 'Quote' && can('billing') && <Button size="sm" variant="secondary" onClick={() => run(() => { actions.postDocument(document.id); notify(`${document.kind} posted and locked.`, 'success'); })}><FileCheck2 size={16} />Post document</Button>}</div></div>
       {operation && <div className="sales-operation-panel no-print"><strong>{operation === 'credit' ? 'Create a return / credit note' : 'Reverse this invoice'}</strong><p>{operation === 'credit' ? 'A draft credit note will copy the original prices. You can reduce quantities for a partial return before posting.' : 'The original invoice remains in the audit trail with a Reversed status. It will no longer contribute to posted invoice value.'}</p><Field label="Reason *"><textarea className="textarea" rows={2} value={reason} onChange={event => setReason(event.target.value)} placeholder="Describe the return or correction" /></Field><div className="sales-operation-buttons"><Button variant="ghost" size="sm" onClick={() => setOperation(null)}>Cancel</Button><Button variant={operation === 'reverse' ? 'danger' : 'primary'} size="sm" onClick={confirmOperation}>{operation === 'credit' ? 'Prepare credit note' : 'Confirm reversal'}</Button></div></div>}
       {error && <p className="error-message no-print" role="alert">{error}</p>}
       <article className="sales-print-sheet">

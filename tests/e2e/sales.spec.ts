@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
+import { login } from './helpers/auth';
 import type { AppState } from '../../src/types';
+
+test.beforeEach(async ({ page }) => { await login(page); });
 
 async function savedState(page: Page): Promise<AppState> {
   await expect(page.locator('[role="status"]').filter({ hasText: 'Workspace storage: saved' })).toHaveCount(1);

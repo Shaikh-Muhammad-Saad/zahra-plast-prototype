@@ -67,8 +67,6 @@
 .workspace-note strong { display: block; font-size: 11px; }
 .workspace-note small { display: block; font-size: 9px; color: var(--muted); margin-top: 2px; }
 .status-pulse { width: 7px; height: 7px; background: #5a9c74; border-radius: 50%; box-shadow: 0 0 0 3px #e3efe5; flex-shrink: 0; }
-.help-link { display: flex; align-items: center; gap: 8px; padding: 15px 13px 0; font-size: 10px; color: #78847b; }
-.help-link svg:last-child { margin-left: auto; }
 .app-body { margin-left: 238px; width: calc(100% - 238px); min-width: 0; display: flex; flex-direction: column; }
 .topbar { height: 74px; flex-shrink: 0; border-bottom: 1px solid var(--border); background: #ffffffed; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; gap: 18px; position: sticky; top: 0; z-index: 30; backdrop-filter: blur(12px); }
 .breadcrumb { display: flex; gap: 13px; color: #929b95; font-size: 11px; align-items: center; }
@@ -200,6 +198,6 @@
 .setting-toggle small { color: #687e58; font-size: 12px; }.setting-toggle strong { color: #405d31; }
 .report-choice, .settings-nav button { font-size: 12px; color: #647b51; }.report-filters .field-label { font-size: 11px; }
 .guide-card p, .guide-faq p, .guide-hero p { color: #62794f; }.guide-faq summary { font-size: 13px; color: #496534; }
-.app-footer, .workspace-note small, .help-link { color: #62745e; }.app-footer { font-size: 10px; }
+.app-footer, .workspace-note small { color: #62745e; }.app-footer { font-size: 10px; }
 .storage-warning { margin: 0 0 20px; }
 @media(max-width:760px) { .dashboard-table { min-width: 570px; }.page-actions { max-width: 100%; }.stat-heading { font-size: 11px; }.source-note { align-items: flex-start; }.product-cell { min-width: 230px; }.topbar .breadcrumb { font-size: 12px; }.filter-controls > .select { flex: 1 1 135px; min-width: 135px; } }

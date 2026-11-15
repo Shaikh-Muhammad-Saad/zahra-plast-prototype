@@ -1,6 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import { login } from './helpers/auth';
 import { readFile } from 'node:fs/promises';
 import type { AppState } from '../../src/types';
+
+test.beforeEach(async ({ page }) => { await login(page); });
 
 async function workspace(page: Page): Promise<AppState> {
   return page.evaluate(() => new Promise((resolve, reject) => {
@@ -53,13 +56,26 @@ test('spreadsheet preview rejects invalid rows and imports only validated pricin
   expect((await workspace(page)).rules.some(r => r.customerId === 'c-001' && r.targetId === 'p-002' && r.value === 17)).toBeTruthy();
 });
 
-test('approval workflow holds proposed rules until an authorized review', async ({ page }) => {
-  await page.goto('/settings');
-  await expect(page.getByRole('heading', { name: 'Workspace settings' })).toBeVisible();
-  await page.getByRole('button', { name: 'Pricing & approvals', exact: true }).click();
-  await page.getByRole('switch', { name: /Approve discount matrix changes/ }).check();
-  await page.getByRole('button', { name: 'Save settings', exact: true }).click();
-  await expect.poll(async () => (await workspace(page)).settings.approvalRequired).toBe(true);
+test('an existing approval-enabled workspace holds proposed rules until review', async ({ page }) => {
+  // Existing/restored workspaces retain their pricing policy after Settings is removed.
+  await page.evaluate(() => new Promise<void>((resolve, reject) => {
+    const opening = indexedDB.open('zehra-plast-local', 1);
+    opening.onerror = () => reject(opening.error);
+    opening.onsuccess = () => {
+      const db = opening.result;
+      const transaction = db.transaction('workspace', 'readwrite');
+      const store = transaction.objectStore('workspace');
+      const request = store.get('current');
+      request.onsuccess = () => {
+        const state = request.result;
+        state.settings.approvalRequired = true;
+        store.put(state, 'current');
+      };
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onerror = () => { db.close(); reject(transaction.error); };
+      transaction.onabort = () => { db.close(); reject(transaction.error); };
+    };
+  }));
   await page.goto('/pricing');
   await page.getByRole('button', { name: 'Edit pricing for Grip Bottle Large', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'New pricing agreement' });
