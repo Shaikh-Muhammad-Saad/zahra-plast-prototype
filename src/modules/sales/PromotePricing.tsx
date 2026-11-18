@@ -9,7 +9,7 @@ export function PromotePricing({ document }: { document: SalesDocument }) {
   const { state, user, actions, notify } = useApp();
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState('');
-  const overridden = document.lines.filter(line => line.override);
+  const overridden = document.lines.filter(line => line.override && line.appliedPricing.type === 'percentage');
   if (!state.settings.allowSaveToMatrix || !overridden.length || document.kind === 'Credit Note') return null;
   const promote = () => {
     try {
@@ -21,15 +21,15 @@ export function PromotePricing({ document }: { document: SalesDocument }) {
         overridePrices.set(line.productId, signature);
       }
       const rules: DiscountRule[] = overridden.map(line => {
-        const existing = state.rules.find(rule => rule.customerId === document.customerId && rule.scope === 'product' && rule.targetId === line.productId && rule.active && rule.effectiveFrom <= document.date && (!rule.effectiveTo || rule.effectiveTo >= document.date));
+        const existing = state.rules.find(rule => rule.customerId === document.customerId && rule.scope === 'product' && rule.type === 'percentage' && rule.targetId === line.productId && rule.active && rule.effectiveFrom <= document.date && (!rule.effectiveTo || rule.effectiveTo >= document.date));
         return { id: existing?.id ?? uid('rule'), customerId: document.customerId, scope: 'product', targetId: line.productId, type: line.appliedPricing.type, value: line.appliedPricing.value, effectiveFrom: existing?.effectiveFrom ?? document.date, effectiveTo: existing?.effectiveTo ?? '', active: true, updatedAt: timestamp, updatedBy: user.name };
       });
       actions.saveRules([...new Map(rules.map(rule => [rule.targetId, rule])).values()], `Explicit Save to matrix from ${document.number || 'unsaved document'}`);
-      notify(state.settings.approvalRequired ? 'Pricing changes submitted for approval.' : 'Customer pricing updated by your explicit request.', 'success');
+      notify('Customer product discounts updated.', 'success');
       setConfirm(false); setError('');
     } catch (cause) { setError((cause as Error).message); }
   };
-  return <div className="sales-matrix-action no-print">{!confirm ? <Button variant="ghost" size="sm" onClick={() => setConfirm(true)}>Save overrides to customer pricing <ArrowRight size={15} /></Button> : <div className="sales-confirm-box"><div><strong>Make these customer prices permanent?</strong><p>This separate action updates {overridePricesCount(overridden)} product agreement(s), subject to approval settings. It is not part of saving this invoice.</p>{error && <p className="error-message" role="alert">{error}</p>}</div><div className="row"><Button size="sm" variant="secondary" onClick={() => { setConfirm(false); setError(''); }}>Cancel</Button><Button size="sm" variant="primary" onClick={promote}>Confirm pricing change</Button></div></div>}</div>;
+  return <div className="sales-matrix-action no-print">{!confirm ? <Button variant="ghost" size="sm" onClick={() => setConfirm(true)}>Save percentage discounts to customer pricing <ArrowRight size={15} /></Button> : <div className="sales-confirm-box"><div><strong>Save these customer product discounts?</strong><p>This updates the saved percentage for {overridePricesCount(overridden)} product(s), for this customer only. It is a separate action from saving this invoice.</p>{error && <p className="error-message" role="alert">{error}</p>}</div><div className="row"><Button size="sm" variant="secondary" onClick={() => { setConfirm(false); setError(''); }}>Cancel</Button><Button size="sm" variant="primary" onClick={promote}>Confirm pricing change</Button></div></div>}</div>;
 }
 
 function overridePricesCount(lines: SalesDocument['lines']) { return new Set(lines.map(line => line.productId)).size; }

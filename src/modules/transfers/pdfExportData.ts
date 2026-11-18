@@ -10,14 +10,14 @@ const amount = (value: number | null) => value === null ? 'Not available' : new 
 const supplied = (value: string) => value.trim() || 'Not supplied';
 const agreement = (price: Pick<Price, 'type' | 'value'>) => price.type === 'percentage' ? `${price.value}% discount` : `Fixed net\nPKR ${amount(price.value)}`;
 const customerLabel = (customer: Customer) => `${customer.code} - ${customer.name}${customer.sample ? ' (sample)' : ''}`;
-const sampleNote = 'Customers marked sample and their pricing agreements are demonstration data.';
+const sampleNote = 'Customers marked sample and their product discounts are demonstration data.';
 const priceNote = 'All prices are PKR per selling pack or set, not procurement costs. Unavailable values are preserved.';
 
 const matrixColumns: PdfExportColumn[] = [
   { header: 'Product code / name', width: 72 },
   { header: 'Brand / category', width: 47 },
   { header: 'List price\nPKR', width: 27, align: 'right' },
-  { header: 'Resolved agreement', width: 36 },
+  { header: 'Discount', width: 36 },
   { header: 'Net price\nPKR', width: 27, align: 'right' },
   { header: 'Pricing source', width: 40 },
 ];
@@ -94,25 +94,25 @@ export function buildTransferPdf(kind: TransferPdfKind, state: AppState): PdfExp
   if (kind === 'discounts') {
     const customers = new Map(state.customers.map(customer => [customer.id, customer]));
     const products = new Map(state.products.map(product => [product.id, product]));
+    const discounts = state.rules.filter(rule => rule.scope === 'product' && rule.type === 'percentage');
     section = {
-      note: `${sampleNote} Fixed prices are net PKR per selling unit. Includes active and inactive saved rules.`,
+      note: `${sampleNote} Includes active and inactive saved product discounts.`,
       columns: [
-        { header: 'Customer', width: 58 },
-        { header: 'Scope', width: 25 },
-        { header: 'Target', width: 58 },
-        { header: 'Agreement', width: 39 },
+        { header: 'Customer', width: 70 },
+        { header: 'Product', width: 71 },
+        { header: 'Discount', width: 39 },
         { header: 'Effective from', width: 29 },
         { header: 'Effective to', width: 29 },
         { header: 'Status', width: 25 },
       ],
-      rows: state.rules.map(rule => {
+      rows: discounts.map(rule => {
         const customer = customers.get(rule.customerId);
-        const product = rule.scope === 'product' ? products.get(rule.targetId) : undefined;
-        const target = rule.scope === 'customer' ? 'All products (default)' : product ? `${product.code}\n${product.name}` : rule.targetId;
-        return [customer ? customerLabel(customer) : rule.customerId, rule.scope, target, agreement(rule), rule.effectiveFrom, rule.effectiveTo || 'No expiry', rule.active ? 'Active' : 'Inactive'];
+        const product = products.get(rule.targetId);
+        const target = product ? `${product.code}\n${product.name}` : rule.targetId;
+        return [customer ? customerLabel(customer) : rule.customerId, target, agreement(rule), rule.effectiveFrom, rule.effectiveTo || 'No expiry', rule.active ? 'Active' : 'Inactive'];
       }),
     };
-    return { ...base, title: 'Customer pricing rules', subtitle: `${state.rules.length.toLocaleString('en-PK')} saved agreements | Percentage discounts and fixed net prices`, sections: [section] };
+    return { ...base, title: 'Customer product discounts', subtitle: `${discounts.length.toLocaleString('en-PK')} saved product discounts | Percentage discounts`, sections: [section] };
   }
 
   if (kind === 'rates') {
@@ -140,7 +140,7 @@ export function buildTransferPdf(kind: TransferPdfKind, state: AppState): PdfExp
     subtitle: `${(state.customers.length * state.products.length).toLocaleString('en-PK')} customer-product prices | Pricing as of ${date}`,
     sections: state.customers.map(customer => ({
       title: customerLabel(customer),
-      note: `${customer.sample ? 'Sample customer and demonstration agreements. ' : ''}Pricing as of ${date}. PKR per selling pack or set; unavailable rates are preserved.`,
+      note: `${customer.sample ? 'Sample customer and demonstration discounts. ' : ''}Pricing as of ${date}. PKR per selling pack or set; unavailable rates are preserved.`,
       columns: matrixColumns,
       rows: state.products.map(product => {
         const price = resolvePrice(product, customer.id, date, state);

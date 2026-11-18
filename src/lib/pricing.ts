@@ -8,10 +8,11 @@ function indexedRules(rules: DiscountRule[]): CustomerRules {
   if (cached && cached.length === rules.length) return cached.index;
   const index: CustomerRules = new Map();
   for (const rule of rules) {
+    // Legacy broader agreements remain in backups, but no longer set live prices.
+    if (rule.scope !== 'product' || rule.type !== 'percentage') continue;
     let customer = index.get(rule.customerId);
     if (!customer) { customer = new Map(); index.set(rule.customerId, customer); }
-    const key = JSON.stringify([rule.scope, rule.scope === 'customer' ? '' : rule.targetId]);
-    const group = customer.get(key); if (group) group.push(rule); else customer.set(key, [rule]);
+    const group = customer.get(rule.targetId); if (group) group.push(rule); else customer.set(rule.targetId, [rule]);
   }
   ruleIndexes.set(rules, { length: rules.length, index });
   return index;
@@ -26,16 +27,12 @@ export function effectiveRate(product: Product, date: string, state: AppState): 
 }
 
 export function resolvePrice(product: Product, customerId: string, date: string, state: AppState): Price {
-  const priority = state.settings.brandCategoryPriority;
-  const rank = { product: 0, brand: priority === 'brand' ? 1 : 2, category: priority === 'category' ? 1 : 2, customer: 3 };
   const customer = indexedRules(state.rules).get(customerId);
-  const candidates = [['product', product.id], ['brand', product.brand], ['category', product.category], ['customer', '']]
-    .flatMap(key => customer?.get(JSON.stringify(key)) ?? []);
+  const candidates = customer?.get(product.id) ?? [];
   const rule = candidates.filter(r => r.active && r.effectiveFrom <= date && (!r.effectiveTo || r.effectiveTo >= date))
-    .sort((a, b) => rank[a.scope] - rank[b.scope] || b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+    .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
   if (!rule) return { type: 'percentage', value: 0, sourceLabel: 'List rate' };
-  const labels = { product: 'Customer + product', brand: 'Customer + brand', category: 'Customer + category', customer: 'Customer default' };
-  return { type: rule.type, value: rule.value, sourceLabel: labels[rule.scope], ruleId: rule.id };
+  return { type: rule.type, value: rule.value, sourceLabel: 'Product discount', ruleId: rule.id };
 }
 
 export function unitNet(rate: number, price: Price): number {

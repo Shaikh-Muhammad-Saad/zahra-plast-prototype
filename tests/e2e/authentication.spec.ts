@@ -51,6 +51,48 @@ test('valid login returns to the requested route and survives refresh', async ({
   await expect(page.getByRole('heading', { name: 'Business overview', exact: true })).toBeVisible();
 });
 
+test('a login persists for exactly 24 hours and automatically signs out without a refresh', async ({ page }) => {
+  const loginTime = new Date('2026-11-16T07:00:00Z').getTime();
+  const hour = 60 * 60 * 1000;
+  await page.clock.install({ time: loginTime - 60_000 });
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await page.clock.pauseAt(loginTime);
+  await page.locator('input[type="email"]').fill(DEMO_EMAIL);
+  await page.locator('input[type="password"]').fill(DEMO_PASSWORD);
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+
+  const saved = await page.evaluate(key => localStorage.getItem(key), AUTH_STORAGE_KEY);
+  expect(saved).not.toBeNull();
+  const session = JSON.parse(saved!);
+  expect(session.expiresAt).toBe(loginTime + 24 * hour);
+  // Let React's lazy-route reveal timers run while the workspace loads.
+  await page.clock.resume();
+  await expect(page.getByText('Workspace storage: saved', { exact: true })).toBeAttached();
+
+  // The previous eight-hour limit must no longer end the session.
+  await page.clock.pauseAt(loginTime + 8 * hour);
+  await expect(page.locator('.app-shell')).toBeVisible();
+  await page.clock.resume();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Business overview', exact: true })).toBeVisible();
+  expect(await page.evaluate(key => localStorage.getItem(key), AUTH_STORAGE_KEY)).toBe(saved);
+
+  // Refresh restores the existing deadline instead of granting another 24 hours.
+  await page.clock.pauseAt(session.expiresAt - 1);
+  await expect(page.locator('.app-shell')).toBeVisible();
+  expect(await page.evaluate(() => Date.now())).toBe(session.expiresAt - 1);
+  await page.clock.runFor(1);
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.locator('.app-shell')).toHaveCount(0);
+  expect(await page.evaluate(key => localStorage.getItem(key), AUTH_STORAGE_KEY)).toBeNull();
+
+  await page.clock.resume();
+  await page.goto('/products');
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+});
+
 test('header only offers logout and logout blocks history and direct navigation', async ({ page }) => {
   await login(page);
   await expect(page.locator('.global-search, .notification-button')).toHaveCount(0);
@@ -82,6 +124,7 @@ test('expired and malformed saved sessions cannot reopen protected pages', async
   }, AUTH_STORAGE_KEY);
   await page.reload();
   await expect.poll(() => new URL(page.url()).pathname).toBe('/login');
+  expect(await page.evaluate(key => localStorage.getItem(key), AUTH_STORAGE_KEY)).toBeNull();
   await page.evaluate(key => localStorage.setItem(key, '{invalid json'), AUTH_STORAGE_KEY);
   await page.goto('/products');
   await expect.poll(() => new URL(page.url()).pathname).toBe('/login');

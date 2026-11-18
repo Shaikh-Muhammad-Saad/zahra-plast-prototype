@@ -1,0 +1,47 @@
+.searchable-select { min-width: 0; }
+.searchable-select-trigger {
+  width: 100%; min-height: 43px; display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1px solid var(--select-border, #cbdad1); border-radius: 10px;
+  background: white; color: var(--text); font: inherit; font-size: 13px; line-height: 1.45; text-align: left;
+}
+.searchable-select-trigger > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.searchable-select-trigger > svg { flex-shrink: 0; color: #576f62; transition: rotate 160ms ease; }
+.searchable-select-trigger:hover { border-color: #8eaf9d; background: #fbfdfb; }
+.searchable-select-trigger[aria-expanded="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px #16664f14; }
+.searchable-select-trigger[aria-expanded="true"] > svg { rotate: 180deg; }
+.searchable-select-trigger:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.searchable-select-placeholder { color: #576f62; }
+.searchable-select-popover {
+  position: fixed; inset: auto; margin: 0; padding: 0; box-sizing: border-box;
+  border: 1px solid var(--select-border, #cbdad1); border-radius: 13px; background: white; color: var(--text);
+  box-shadow: var(--select-shadow, 0 16px 40px #153c3121); overflow: hidden;
+  opacity: 0; translate: 0 -4px;
+  transition: opacity 100ms ease, translate 100ms ease, display 100ms allow-discrete, overlay 100ms allow-discrete;
+}
+.searchable-select-popover:popover-open { display: flex; flex-direction: column; opacity: 1; translate: 0 0; transition-duration: 160ms; }
+@starting-style { .searchable-select-popover:popover-open { opacity: 0; translate: 0 -4px; } }
+.searchable-select-search { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.searchable-select-search > svg { color: var(--primary); flex-shrink: 0; }
+.searchable-select-search > input { width: 100%; min-width: 0; padding: 3px 0; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 13px; line-height: 1.5; }
+.searchable-select-search:focus-within { box-shadow: inset 0 -2px var(--primary); }
+.searchable-select-search > input::placeholder { color: #718378; }
+.searchable-select-count { padding: 9px 14px 5px; color: var(--muted); font-size: 11px; flex-shrink: 0; }
+.searchable-select-options { padding: 5px 6px 6px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #b9cfc1 transparent; }
+.searchable-select-option { display: flex; align-items: center; gap: 14px; min-height: 54px; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
+.searchable-select-option + .searchable-select-option { margin-top: 2px; }
+.searchable-select-option > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.searchable-select-option strong { display: block; font-size: 13px; font-weight: 550; line-height: 1.4; }
+.searchable-select-option small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+.searchable-select-option.is-highlighted { background: #f1f6f3; outline: 1px solid #b9cfc1; outline-offset: -1px; }
+.searchable-select-option[aria-selected="true"] { background: #e6f3eb; color: var(--primary-hover); }
+.searchable-select-option > svg { flex-shrink: 0; color: var(--primary); }
+.searchable-select-empty { display: flex; align-items: center; flex-direction: column; gap: 9px; padding: 22px 14px 28px; font-size: 12px; text-align: center; color: var(--muted); overflow: auto; }
+.searchable-select-empty strong { color: var(--text); font-size: 13px; }
+@media (max-width: 760px), (pointer: coarse) {
+  .searchable-select-trigger { min-height: 44px; font-size: 14px; }
+  .searchable-select-search > input { font-size: 16px; }
+  .searchable-select-option { min-height: 58px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .searchable-select-popover, .searchable-select-popover:popover-open, .searchable-select-trigger > svg { transition: none; translate: none; }
+}

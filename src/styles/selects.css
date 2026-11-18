@@ -1,0 +1,243 @@
+/* Shared dropdown styling. Native selects retain labels, keyboard input and form semantics. */
+:root {
+  --select-border: #cbdad1;
+  --select-hover: #f1f6f3;
+  --select-selected: #e6f3eb;
+  --select-shadow: 0 16px 40px #153c3121, 0 4px 12px #153c3110;
+  --select-caret: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23576f62' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+select.select,
+.date-filter select {
+  appearance: none;
+  border-color: var(--select-border);
+  border-radius: 10px;
+  background-color: white;
+  background-image: var(--select-caret);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-inline-end: 38px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.45;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+select.select:hover:not(:disabled),
+.date-filter select:hover:not(:disabled) {
+  border-color: #8eaf9d;
+  background-color: #fbfdfb;
+}
+
+select.select:focus-visible,
+.date-filter select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+select.select:disabled,
+.date-filter select:disabled {
+  color: #738078;
+  border-color: var(--border);
+  background-color: var(--surface-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Keep short filters steady as their selected label changes. */
+.toolbar select.select { min-inline-size: 150px; }
+.date-filter select { min-inline-size: 112px; }
+
+/* Compact order-unit controls keep their existing footprint. */
+.sales-quantity-control > select.select {
+  padding-inline-end: 24px;
+  background-position: right 6px center;
+  background-size: 14px;
+  border-radius: 7px;
+}
+
+/* Older browsers keep the styled trigger and their native options picker. */
+@supports (appearance: base-select) {
+  select.select,
+  .date-filter select,
+  select.select::picker(select),
+  .date-filter select::picker(select) {
+    appearance: base-select;
+  }
+
+  select.select,
+  .date-filter select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-inline-end: 12px;
+    background-image: none;
+    /* Allow long names to wrap instead of pushing the arrow outside the control. */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    overflow: hidden;
+  }
+
+  select.select::picker-icon,
+  .date-filter select::picker-icon {
+    content: '';
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    margin-inline-start: auto;
+    background-color: #576f62;
+    mask: var(--select-caret) center / contain no-repeat;
+    transition: rotate 160ms ease, background-color 160ms ease;
+  }
+
+  select.select:open,
+  .date-filter select:open {
+    border-color: var(--primary);
+    background-color: white;
+    box-shadow: 0 0 0 3px #16664f14;
+  }
+
+  select.select:open::picker-icon,
+  .date-filter select:open::picker-icon {
+    rotate: 180deg;
+    background-color: var(--primary);
+  }
+
+  select.select::picker(select),
+  .date-filter select::picker(select) {
+    color-scheme: light;
+    box-sizing: border-box;
+    width: max-content;
+    min-width: max(anchor-size(inline), 160px);
+    max-width: min(560px, calc(100dvw - 24px));
+    /* Percentages use the native anchor's available area, including short landscape views. */
+    max-height: min(340px, calc(100% - 12px));
+    position-try-order: normal;
+    margin-block: 6px;
+    padding: 6px;
+    border: 1px solid var(--select-border);
+    border-radius: 13px;
+    background: white;
+    color: var(--text);
+    box-shadow: var(--select-shadow);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #b9cfc1 transparent;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 100ms ease-in, transform 100ms ease-in, display 100ms allow-discrete, overlay 100ms allow-discrete;
+  }
+
+  select.select:open::picker(select),
+  .date-filter select:open::picker(select) {
+    opacity: 1;
+    transform: translateY(0);
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(.16, 1, .3, 1);
+  }
+
+  @starting-style {
+    select.select:open::picker(select),
+    .date-filter select:open::picker(select) {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+
+  select.select option,
+  .date-filter select option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: white;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 450;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    transition: background-color 100ms ease, color 100ms ease;
+  }
+
+  select.select option + option,
+  .date-filter select option + option { margin-top: 2px; }
+
+  select.select option:hover:not(:disabled),
+  .date-filter select option:hover:not(:disabled) { background: var(--select-hover); }
+
+  select.select option:checked,
+  .date-filter select option:checked {
+    background: var(--select-selected);
+    color: var(--primary-hover);
+    font-weight: 650;
+  }
+
+  select.select option:focus-visible,
+  .date-filter select option:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+    background: var(--select-selected);
+  }
+
+  select.select option::checkmark,
+  .date-filter select option::checkmark {
+    content: '';
+    order: 1;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    margin-inline-start: auto;
+    border-radius: 50%;
+    background: var(--primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4 4 10-10'/%3E%3C/svg%3E") center / 12px no-repeat;
+  }
+
+  select.select option:disabled,
+  .date-filter select option:disabled { color: #88938d; cursor: not-allowed; }
+
+  .sales-quantity-control > select.select { gap: 5px; padding-inline-end: 6px; }
+  .sales-quantity-control > select.select::picker-icon { flex-basis: 12px; width: 12px; height: 12px; }
+
+  @media (max-width: 760px), (pointer: coarse) {
+    select.select option,
+    .date-filter select option { min-height: 44px; font-size: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    select.select,
+    .date-filter select,
+    select.select option,
+    .date-filter select option,
+    select.select::picker(select),
+    .date-filter select::picker(select),
+    select.select:open::picker(select),
+    .date-filter select:open::picker(select),
+    select.select::picker-icon,
+    .date-filter select::picker-icon { transition: none; transform: none; }
+  }
+}
+
+@media (max-width: 760px) {
+  .toolbar select.select { min-inline-size: 135px; }
+}
+
+@media (forced-colors: active) {
+  select.select,
+  .date-filter select { border-color: ButtonText; }
+  select.select::picker-icon,
+  .date-filter select::picker-icon { background-color: ButtonText; }
+  select.select option:checked,
+  .date-filter select option:checked { outline: 1px solid Highlight; }
+}

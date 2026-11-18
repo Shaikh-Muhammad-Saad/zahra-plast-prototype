@@ -94,7 +94,7 @@ export function createOperations(getState: () => AppState, setState: (state: App
         const preserved = oldLine && previous?.customerId === doc.customerId ? oldLine : quotedLine;
         if (line.listRate !== (preserved?.listRate ?? effective)) throw new Error(`Use the effective list rate for ${product.name}.`);
         const resolved = resolvePrice(product, doc.customerId, doc.date, state);
-        if (!samePrice(line.originalPricing, resolved) && !(preserved && samePrice(line.originalPricing, preserved.originalPricing))) throw new Error(`Original matrix pricing for ${product.name} must come from the saved rules.`);
+        if (!samePrice(line.originalPricing, resolved) && !(preserved && samePrice(line.originalPricing, preserved.originalPricing))) throw new Error(`Original matrix pricing for ${product.name} must come from the saved product discount.`);
         if (line.cartonQuantity !== (preserved?.cartonQuantity ?? product.cartonQuantity)) throw new Error('Carton quantities must come from the product master.');
         const changedApplied = !preserved || !samePrice(preserved.appliedPricing, line.appliedPricing) || preserved.override !== line.override || preserved.reason !== line.reason;
         if (line.override && changedApplied && !hasPermission(user, 'override')) throw new Error('Discount override permission is required.');
@@ -157,20 +157,43 @@ export function createOperations(getState: () => AppState, setState: (state: App
         log(state, user, before ? 'User updated' : 'User created', 'Users', target.name, before, target);
       });
     },
-    saveRules(rules: DiscountRule[], reason = 'Pricing maintenance') {
+    saveProductDiscount(customerId: string, productId: string, pricing: Pick<Price, 'type' | 'value'>, effectiveDate: string) {
+      return change('pricing', (state, user) => {
+        if (!validDate(effectiveDate)) throw new Error('Use a valid discount effective date.');
+        if (pricing.type !== 'percentage') throw new Error('Use a percentage discount for the customer product matrix.');
+        assertValid(validatePrice(pricing));
+        const matches = state.rules.filter(rule => rule.scope === 'product' && rule.type === 'percentage' && rule.customerId === customerId && rule.targetId === productId && rule.active);
+        const before = matches.filter(rule => rule.effectiveFrom <= effectiveDate && (!rule.effectiveTo || rule.effectiveTo >= effectiveDate))
+          .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+        const future = matches.filter(rule => rule.effectiveFrom > effectiveDate).sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))[0];
+        let effectiveTo = '';
+        if (future) {
+          const dayBefore = new Date(`${future.effectiveFrom}T00:00:00Z`);
+          dayBefore.setUTCDate(dayBefore.getUTCDate() - 1);
+          effectiveTo = dayBefore.toISOString().slice(0, 10);
+        }
+        const saved: DiscountRule = { id: before?.id ?? id('discount'), customerId, scope: 'product', targetId: productId,
+          type: pricing.type, value: pricing.value, effectiveFrom: before?.effectiveFrom ?? effectiveDate,
+          effectiveTo: before?.effectiveTo ?? effectiveTo, active: true, updatedAt: now(), updatedBy: user.name };
+        assertValid(validateRules([saved], state));
+        state.rules = upsert(state.rules, saved);
+        const customer = state.customers.find(item => item.id === customerId)!;
+        const product = state.products.find(item => item.id === productId)!;
+        log(state, user, 'Product discount updated', 'Discount matrix', `${customer.name}: ${product.code} ${product.name}`, before, saved);
+        return saved;
+      });
+    },
+    saveRules(rules: DiscountRule[], reason = 'Product discount maintenance') {
       return change('pricing', (state, user) => {
         if (!rules.length) throw new Error('No pricing changes supplied.');
+        if (rules.some(rule => rule.scope !== 'product')) throw new Error('Only customer-specific product discounts can be changed.');
+        if (rules.some(rule => rule.type !== 'percentage')) throw new Error('Use percentage discounts for the customer product matrix.');
         assertValid(validateRules(rules, state));
-        const stamped = rules.map(r => ({ ...structuredClone(r), targetId: r.scope === 'customer' ? '' : r.targetId, updatedAt: now(), updatedBy: user.name }));
-        if (state.settings.approvalRequired) {
-          state.approvals.unshift({ id: id('approval'), requestedBy: user.name, requestedAt: now(), reason, rules: stamped, status: 'Pending' });
-          log(state, user, 'Pricing submitted', 'Discount matrix', `${rules.length} change(s) awaiting approval: ${reason}`, undefined, stamped);
-        } else {
-          const editedIds = new Set(rules.map(r => r.id));
-          const before = state.rules.filter(r => editedIds.has(r.id));
-          state.rules = mergeBatch(state.rules, stamped);
-          log(state, user, 'Pricing updated', 'Discount matrix', `${rules.length} change(s): ${reason}`, before, stamped);
-        }
+        const stamped = rules.map(r => ({ ...structuredClone(r), updatedAt: now(), updatedBy: user.name }));
+        const editedIds = new Set(rules.map(r => r.id));
+        const before = state.rules.filter(r => editedIds.has(r.id));
+        state.rules = mergeBatch(state.rules, stamped);
+        log(state, user, 'Product discounts updated', 'Discount matrix', `${rules.length} change(s): ${reason}`, before, stamped);
       });
     },
     deleteRule(ruleId: string) {

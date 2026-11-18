@@ -23,15 +23,12 @@ export function createInitialState(): AppState {
     settings: { companyName: 'Zahra Plast', address: '', phone: '', email: '', approvalRequired: false, overrideReasonRequired: true, allowSaveToMatrix: false, brandCategoryPriority: 'brand', invoicePrefix: 'ZP-INV', quotePrefix: 'ZP-QT' },
   };
   const stamp = '2026-10-21T09:00:00+05:00';
-  for (let i = 0; i < 120; i++) {
-    const base: DiscountRule = { id: `sample-default-${i}`, customerId: customers[i].id, scope: 'customer', targetId: '', type: 'percentage', value: [5, 8, 10, 12, 15][i % 5], effectiveFrom: '2026-10-20', effectiveTo: '', active: true, updatedAt: stamp, updatedBy: 'Sample data' };
-    state.rules.push(base);
-    if (i < 40) {
-      state.rules.push({ ...base, id: `sample-brand-${i}`, scope: 'brand', targetId: suppliers[i % 8].name, value: 12 + i % 6 });
-      const product = products[(i * 7) % 80];
-      state.rules.push({ ...base, id: `sample-product-${i}`, scope: 'product', targetId: product.id, type: i % 3 === 0 ? 'fixed' : 'percentage', value: i % 3 === 0 ? Math.round(product.rate! * .82) : 18 });
-    }
-    if (i < 20) state.rules.push({ ...base, id: `sample-category-${i}`, scope: 'category', targetId: categories[i % categories.length], value: 14 });
+  for (let i = 0; i < 40; i++) {
+    const product = products[(i * 7) % 80];
+    const discount: DiscountRule = { id: `sample-product-${i}`, customerId: customers[i].id, scope: 'product', targetId: product.id,
+      type: 'percentage', value: 18,
+      effectiveFrom: '2026-10-20', effectiveTo: '', active: true, updatedAt: stamp, updatedBy: 'Sample data' };
+    state.rules.push(discount);
   }
   const activeProducts = products.filter(p => p.status === 'Active');
   for (let i = 0; i < 24; i++) {
@@ -56,9 +53,9 @@ export function createInitialState(): AppState {
     state.documents.push(document);
   }
   state.audit = [
-    { id: 'seed-audit-1', date: '2026-11-16T09:30:00+05:00', user: 'Sample data', action: 'Workspace prepared', entity: 'Workspace', detail: '317 source products, 8 brands, 150 sample customers. Customer agreements and documents are demonstration data.' },
+    { id: 'seed-audit-1', date: '2026-11-16T09:30:00+05:00', user: 'Sample data', action: 'Workspace prepared', entity: 'Workspace', detail: '317 source products, 8 brands, 150 sample customers. Product discounts and documents are demonstration data.' },
     { id: 'seed-audit-2', date: '2026-11-16T09:20:00+05:00', user: 'Sample data', action: 'Catalog imported', entity: 'Products', detail: 'All 317 catalog rows retained. 13 products inactive pending source confirmation; 309 numeric list rates preserved.' },
-    { id: 'seed-audit-3', date: '2026-11-16T09:10:00+05:00', user: 'Sample data', action: 'Pricing loaded', entity: 'Discount matrix', detail: '220 sample pricing rules illustrate customer, brand, category and product agreements.' },
+    { id: 'seed-audit-3', date: '2026-11-16T09:10:00+05:00', user: 'Sample data', action: 'Discounts loaded', entity: 'Discount matrix', detail: '40 sample product discounts illustrate prices set separately for each customer and product.' },
   ];
   return state;
 }

@@ -21,7 +21,7 @@ test('all export cards download complete PDFs while Excel remains available', as
     ['Products', 'zahra-plast-products.pdf'],
     ['Customers', 'zahra-plast-customers.pdf'],
     ['Suppliers', 'zahra-plast-suppliers.pdf'],
-    ['Pricing rules', 'zahra-plast-discounts.pdf'],
+    ['Product discounts', 'zahra-plast-discounts.pdf'],
     ['Current rate list', 'zahra-plast-rates.pdf'],
     ['Complete customer matrix', 'zahra-plast-complete-customer-matrix.pdf'],
   ];

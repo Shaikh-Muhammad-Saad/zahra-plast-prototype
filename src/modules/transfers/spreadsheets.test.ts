@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { validateImport, exportRows, parseSpreadsheet, parseWorkspaceBackup, MAX_BACKUP_BYTES } from '../../lib/spreadsheets';
 import type { AppState, DiscountRule } from '../../types';
 import { validateBackup } from '../../state/operations';
+import { buildTransferPdf } from './pdfExportData';
 
 function fixture(): AppState {
   return {
@@ -37,13 +38,25 @@ describe('spreadsheet validation', () => {
     expect(result.row).toBe(2);
     expect(result.record).toMatchObject({ customerId: 'c1', targetId: 'p1', value: 10, active: true });
   });
-  it('rejects unknown codes, duplicates, and invalid percentage/fixed prices', () => {
+  it('rejects unknown codes, duplicates, invalid percentages and fixed prices', () => {
     const output = validateImport('discounts', [ruleRow, ruleRow, { ...ruleRow, customerCode: 'MISSING', target: 'UNKNOWN', value: '101' }, { ...ruleRow, effectiveFrom: '2026-11-02', type: 'fixed', value: '0' }], fixture());
     expect(output[1].errors.join()).toContain('Duplicate row');
     expect(output[2].errors.join()).toContain('Unknown customer');
     expect(output[2].errors.join()).toContain('Unknown product');
     expect(output[2].errors.join()).toContain('between 0 and 100');
-    expect(output[3].errors.join()).toContain('greater than zero');
+    expect(output[3].errors.join()).toContain('Only percentage discounts');
+  });
+  it('accepts simple percentage columns and rejects inherited scopes and conflicting legacy columns', () => {
+    const row = { customerCode: 'C-001', productCode: 'ZP-001', discountPercent: 12, effectiveFrom: '2026-11-01' };
+    const [valid] = validateImport('discounts', [row], fixture());
+    expect(valid.errors).toEqual([]);
+    expect(valid.record).toMatchObject({ customerId: 'c1', targetId: 'p1', scope: 'product', type: 'percentage', value: 12 });
+    for (const scope of ['brand', 'category', 'customer']) {
+      expect(validateImport('discounts', [{ ...row, scope }], fixture())[0].errors.join()).toContain('Only product discounts');
+    }
+    expect(validateImport('discounts', [{ ...row, type: 'fixed' }], fixture())[0].errors.join()).toContain('Only percentage discounts');
+    expect(validateImport('discounts', [{ ...row, productCode: '' }], fixture())[0].errors.join()).toContain('productCode is required');
+    expect(validateImport('discounts', [{ ...row, target: 'DIFFERENT', value: 15 }], fixture())[0].errors).toEqual(expect.arrayContaining(['productCode and legacy target must match', 'discountPercent and legacy value must match']));
   });
   it('rejects active date overlaps but permits an exact-key update', () => {
     const state = fixture();
@@ -74,13 +87,28 @@ describe('spreadsheet validation', () => {
     const output = validateImport('rates', [{ productCode: 'ZP-001', rate: 165, effectiveDate: '2026-11-20' }], state);
     expect(output[0].errors).toEqual([]);
   });
-  it('exports pricing rules with business codes for a lossless round trip', () => {
+  it('exports only product percentages with business codes for a lossless round trip', () => {
     const state = fixture(); state.rules = [validateImport('discounts', [ruleRow], state)[0].record as DiscountRule];
+    state.rules.push({ ...state.rules[0], id: 'legacy-fixed', type: 'fixed', value: 100 }, { ...state.rules[0], id: 'legacy-brand', scope: 'brand', targetId: 'SAFARI' });
     const exported = exportRows('discounts', state);
-    expect(exported[0]).toMatchObject({ customerCode: 'C-001', target: 'ZP-001', active: true });
+    expect(exported).toHaveLength(1);
+    expect(exported[0]).toMatchObject({ customerCode: 'C-001', productCode: 'ZP-001', discountPercent: 10, active: true });
     const [result] = validateImport('discounts', exported, state);
     expect(result.errors).toEqual([]);
     expect(result.record).toMatchObject({ id: state.rules[0].id, customerId: 'c1', targetId: 'p1', type: 'percentage', value: 10, effectiveFrom: '2026-11-01', active: true });
+    const pdf = buildTransferPdf('discounts', state);
+    expect(pdf.title).toBe('Customer product discounts');
+    expect(pdf.sections[0].rows).toHaveLength(1);
+    expect(pdf.sections[0].rows[0]).toContain('10% discount');
+  });
+  it('preserves a legacy fixed product record when importing a percentage for the same product and dates', () => {
+    const state = fixture();
+    const legacy = { ...validateImport('discounts', [ruleRow], state)[0].record as DiscountRule, id: 'legacy-fixed', type: 'fixed' as const, value: 100 };
+    state.rules = [legacy];
+    const [result] = validateImport('discounts', [ruleRow], state);
+    expect(result.errors).toEqual([]);
+    expect((result.record as DiscountRule).id).not.toBe(legacy.id);
+    expect(state.rules).toEqual([legacy]);
   });
   it('preserves sample provenance through customer exports and imports with an omitted flag', () => {
     const state = fixture();

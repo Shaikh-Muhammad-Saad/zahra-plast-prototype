@@ -36,20 +36,35 @@ describe('source catalog', () => {
     expect(state.products.find(p => p.sourceSerial === 117)?.packingCount).toBe(2);
   });
 });
-describe('pricing calculations and hierarchy', () => {
-  it('uses product rules first and fixed net prices remain independent of list rate', () => {
+describe('customer product discounts', () => {
+  it('uses only a customer-specific product percentage and starts with percentage-only samples', () => {
     const state = createInitialState(); const result = resolvePrice(state.products[0], 'c-001', '2026-11-16', state);
-    expect(result.sourceLabel).toBe('Customer + product'); expect(result.type).toBe('fixed');
-    expect(unitNet(200, result)).toBe(result.value); expect(unitNet(400, result)).toBe(result.value);
+    expect(result.sourceLabel).toBe('Product discount'); expect(result.type).toBe('percentage'); expect(result.value).toBe(18);
+    expect(state.rules).toHaveLength(40);
+    expect(state.rules.every(rule => rule.scope === 'product' && rule.type === 'percentage')).toBe(true);
+    expect(unitNet(200, result)).toBe(164); expect(unitNet(400, result)).toBe(328);
   });
-  it('resolves brand versus category using the configured priority and respects dates', () => {
+  it('ignores retained brand, category, default and fixed-product agreements without altering them', () => {
     const state = createInitialState(); const base = rule(); state.rules = [
       { ...base, id: 'b', scope: 'brand', targetId: 'SAFARI', value: 12 },
       { ...base, id: 'c', scope: 'category', targetId: 'School bottle', value: 20 },
+      { ...base, id: 'd', scope: 'customer', targetId: '', value: 15 },
+      { ...base, id: 'f', type: 'fixed', value: 128 },
     ];
-    expect(resolvePrice(state.products[0], 'c-150', '2026-11-16', state).value).toBe(12);
-    state.settings.brandCategoryPriority = 'category'; expect(resolvePrice(state.products[0], 'c-150', '2026-11-16', state).value).toBe(20);
-    expect(resolvePrice(state.products[0], 'c-150', '2026-10-21', state).value).toBe(0);
+    const snapshot = structuredClone(state);
+    expect(resolvePrice(state.products[0], 'c-150', '2026-11-16', state)).toEqual({ type: 'percentage', value: 0, sourceLabel: 'List rate' });
+    expect(state).toEqual(snapshot);
+  });
+  it('matches the selected customer and product and respects active status and date boundaries', () => {
+    const state = createInitialState(); state.rules = [{ ...rule(), effectiveTo: '2026-11-30' }];
+    expect(resolvePrice(state.products[0], 'c-150', '2026-10-31', state).value).toBe(0);
+    expect(resolvePrice(state.products[0], 'c-150', '2026-11-01', state).value).toBe(12);
+    expect(resolvePrice(state.products[0], 'c-150', '2026-11-30', state).value).toBe(12);
+    expect(resolvePrice(state.products[0], 'c-150', '2026-12-01', state).value).toBe(0);
+    expect(resolvePrice(state.products[0], 'c-001', '2026-11-16', state).value).toBe(0);
+    expect(resolvePrice(state.products[1], 'c-150', '2026-11-16', state).value).toBe(0);
+    state.rules = [{ ...state.rules[0], active: false }];
+    expect(resolvePrice(state.products[0], 'c-150', '2026-11-16', state).value).toBe(0);
   });
   it('calculates cartons as selling packs without multiplying component count', () => {
     const state = createInitialState(); const line = draft(state).lines[0];
@@ -71,7 +86,7 @@ describe('pricing calculations and hierarchy', () => {
     expect(JSON.stringify(refreshed.documents)).toBe(snapshot);
   });
 });
-describe('rule validation and approval', () => {
+describe('product discount validation and saving', () => {
   it('rejects negative / >100 percentages and zero / nonfinite fixed prices', () => {
     expect(validatePrice({ type: 'percentage', value: -1 })).not.toHaveLength(0);
     expect(validatePrice({ type: 'percentage', value: 101 })).not.toHaveLength(0);
@@ -89,24 +104,70 @@ describe('rule validation and approval', () => {
     expect(s.state.rules.find(r => r.id === 'test-rule')?.value).toBe(17);
     expect(s.state.audit[0].before).toContain('12'); expect(s.state.audit[0].after).toContain('17');
   });
-  it('queues approvals without changing pricing; reviewing applies the rule', () => {
-    const s = setup(); s.actions.updateSettings({ approvalRequired: true }); const before = JSON.stringify(s.state.rules);
-    s.actions.saveRules([rule()], 'New agreement'); expect(JSON.stringify(s.state.rules)).toBe(before);
-    s.actions.reviewApproval(s.state.approvals[0].id, true);
-    expect(s.state.rules.find(r => r.id === 'test-rule')?.value).toBe(12); expect(s.state.approvals[0].status).toBe('Approved');
-  });
-  it('deactivation is also subject to approval', () => {
-    const s = setup(); s.actions.saveRules([rule()]); s.actions.updateSettings({ approvalRequired: true }); s.actions.deleteRule('test-rule');
-    expect(s.state.rules.find(r => r.id === 'test-rule')?.active).toBe(true);
-    s.actions.reviewApproval(s.state.approvals[0].id, true); expect(s.state.rules.find(r => r.id === 'test-rule')?.active).toBe(false);
-  });
-  it('revalidates pending changes against newly approved overlapping agreements', () => {
+  it('commits direct and batch product discounts immediately despite a legacy approval setting', () => {
     const s = setup(); s.actions.updateSettings({ approvalRequired: true });
-    s.actions.saveRules([rule()]); const first = s.state.approvals[0].id;
-    s.actions.saveRules([{ ...rule(), id: 'conflicting-rule', value: 14 }]); const second = s.state.approvals[0].id;
-    s.actions.reviewApproval(first, true);
-    expect(() => s.actions.reviewApproval(second, true)).toThrow('Overlapping');
-    expect(s.state.approvals.find(a => a.id === second)?.status).toBe('Pending');
+    const documents = structuredClone(s.state.documents);
+    s.actions.saveRules([rule()], 'Product discounts imported');
+    s.actions.saveProductDiscount('c-150', 'p-002', { type: 'percentage', value: 23 }, '2026-11-16');
+    expect(resolvePrice(s.state.products[0], 'c-150', '2026-11-16', s.state).value).toBe(12);
+    expect(resolvePrice(s.state.products[1], 'c-150', '2026-11-16', s.state).value).toBe(23);
+    expect(s.state.approvals).toHaveLength(0);
+    expect(s.state.documents).toEqual(documents);
+    expect(s.state.audit[0].action).toBe('Product discount updated');
+  });
+  it('deactivates a product discount immediately without an approval queue', () => {
+    const s = setup(); s.actions.saveRules([rule()]); s.actions.updateSettings({ approvalRequired: true }); s.actions.deleteRule('test-rule');
+    expect(s.state.rules.find(r => r.id === 'test-rule')?.active).toBe(false);
+    expect(s.state.approvals).toHaveLength(0);
+  });
+  it('rejects new inherited or fixed matrix writes atomically', () => {
+    const s = setup(); const before = structuredClone(s.state);
+    for (const scope of ['brand', 'category', 'customer'] as const) {
+      expect(() => s.actions.saveRules([{ ...rule(), scope }])).toThrow('Only customer-specific product');
+    }
+    expect(() => s.actions.saveRules([{ ...rule(), type: 'fixed', value: 120 }])).toThrow('percentage');
+    expect(() => s.actions.saveProductDiscount('c-150', 'p-001', { type: 'fixed', value: 120 }, '2026-11-16')).toThrow('percentage');
+    expect(s.state).toEqual(before);
+  });
+  it('updates a matching entry without losing its dates and supports an explicit zero percent reset', () => {
+    const s = setup(); s.actions.saveRules([{ ...rule(), effectiveTo: '2026-12-31' }]);
+    const saved = s.actions.saveProductDiscount('c-150', 'p-001', { type: 'percentage', value: 0 }, '2026-11-16');
+    expect(saved).toMatchObject({ id: 'test-rule', effectiveFrom: '2026-11-01', effectiveTo: '2026-12-31', active: true, value: 0 });
+    expect(s.state.rules.filter(rule => rule.id === 'test-rule')).toHaveLength(1);
+    expect(resolvePrice(s.state.products[0], 'c-150', '2026-11-16', s.state)).toMatchObject({ type: 'percentage', value: 0, ruleId: 'test-rule' });
+    expect(s.state.audit[0].before).toContain('12'); expect(s.state.audit[0].after).toContain('"value":0');
+  });
+  it('keeps a future product percentage intact when adding one in an earlier gap', () => {
+    const s = setup(); s.actions.saveRules([{ ...rule(), effectiveFrom: '2026-12-01' }]);
+    const saved = s.actions.saveProductDiscount('c-150', 'p-001', { type: 'percentage', value: 7 }, '2026-11-16');
+    expect(saved.effectiveTo).toBe('2026-11-30');
+    expect(resolvePrice(s.state.products[0], 'c-150', '2026-11-30', s.state).value).toBe(7);
+    expect(resolvePrice(s.state.products[0], 'c-150', '2026-12-01', s.state).value).toBe(12);
+    expect(() => validateBackup(s.state)).not.toThrow();
+  });
+  it('retains legacy fixed prices and approval history when saving a live percent and restoring its backup', () => {
+    const s = setup(); const legacy = { ...rule(), id: 'legacy-fixed', type: 'fixed' as const, value: 128 };
+    s.state.rules.push(legacy);
+    s.state.approvals.push({ id: 'legacy-approval', requestedBy: 'Prior user', requestedAt: '2026-11-01', reason: 'Old request', rules: [rule()], status: 'Pending' });
+    const documents = structuredClone(s.state.documents);
+    s.actions.saveProductDiscount('c-150', 'p-001', { type: 'percentage', value: 15 }, '2026-11-16');
+    expect(s.state.rules.find(rule => rule.id === legacy.id)).toEqual(legacy);
+    expect(s.state.approvals[0].status).toBe('Pending');
+    expect(resolvePrice(s.state.products[0], 'c-150', '2026-11-16', s.state).value).toBe(15);
+    expect(() => validateBackup(s.state)).not.toThrow();
+    s.actions.restoreBackup(s.state);
+    expect(resolvePrice(s.state.products[0], 'c-150', '2026-11-16', s.state).value).toBe(15);
+    expect(s.state.documents).toEqual(documents);
+  });
+  it('validates manual discount input and permissions before writing any state', () => {
+    const s = setup(); const before = structuredClone(s.state);
+    expect(() => s.actions.saveProductDiscount('unknown', 'p-001', { type: 'percentage', value: 10 }, '2026-11-16')).toThrow('Unknown customer');
+    expect(() => s.actions.saveProductDiscount('c-150', 'unknown', { type: 'percentage', value: 10 }, '2026-11-16')).toThrow('Unknown product');
+    expect(() => s.actions.saveProductDiscount('c-150', 'p-001', { type: 'percentage', value: 101 }, '2026-11-16')).toThrow('between');
+    expect(() => s.actions.saveProductDiscount('c-150', 'p-001', { type: 'percentage', value: 10 }, 'bad-date')).toThrow('date');
+    expect(s.state).toEqual(before);
+    s.actions.switchUser('u-finance');
+    expect(() => s.actions.saveProductDiscount('c-150', 'p-001', { type: 'percentage', value: 10 }, '2026-11-16')).toThrow('permission');
   });
   it('handles a complete 150 by 317 matrix and all its effective lookups', () => {
     const state = createInitialState(); state.rules = [];

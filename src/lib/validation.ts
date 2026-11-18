@@ -47,6 +47,9 @@ export function validateRules(incoming: DiscountRule[], state: AppState): string
   const groups = new Map<string, DiscountRule[]>();
   for (const rule of combined) {
     if (!rule.active) continue;
+    // Historical fixed product prices are retained, but no longer compete with
+    // live percentage discounts for the same customer/product/date.
+    if (rule.scope === 'product' && rule.type === 'fixed') continue;
     const key = JSON.stringify([rule.customerId, rule.scope, rule.scope === 'customer' ? '' : rule.targetId]);
     const group = groups.get(key); if (group) group.push(rule); else groups.set(key, [rule]);
   }

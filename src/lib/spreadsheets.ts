@@ -13,7 +13,7 @@ export const sheetColumns: Record<TransferKind, string[]> = {
   products: ['code', 'name', 'brand', 'category', 'rate', 'packing', 'packingCount', 'cartonQuantity', 'status', 'effectiveDate'],
   customers: ['code', 'name', 'contact', 'email', 'phone', 'address', 'paymentTerms', 'group', 'status', 'sample'],
   suppliers: ['code', 'name', 'contact', 'email', 'phone', 'terms'],
-  discounts: ['customerCode', 'scope', 'target', 'type', 'value', 'effectiveFrom', 'effectiveTo', 'active'],
+  discounts: ['customerCode', 'productCode', 'discountPercent', 'effectiveFrom', 'effectiveTo', 'active'],
   rates: ['productCode', 'rate', 'effectiveDate'],
 };
 
@@ -102,7 +102,7 @@ export function exportRows(kind: TransferKind, state: AppState): SheetRow[] {
   if (kind === 'customers') return state.customers.map(c => ({ code: c.code, name: c.name, contact: c.contact, email: c.email, phone: c.phone, address: c.address, paymentTerms: c.paymentTerms, group: c.group, status: c.status, sample: c.sample }));
   if (kind === 'suppliers') return state.suppliers.map(s => ({ code: s.code, name: s.name, contact: s.contact, email: s.email, phone: s.phone, terms: s.terms }));
   if (kind === 'rates') return state.products.map(p => ({ productCode: p.code, rate: effectiveRate(p, today(), state), effectiveDate: today() }));
-  return state.rules.map(rule => ({ customerCode: state.customers.find(c => c.id === rule.customerId)?.code ?? rule.customerId, scope: rule.scope, target: rule.scope === 'product' ? state.products.find(p => p.id === rule.targetId)?.code ?? rule.targetId : rule.targetId, type: rule.type, value: rule.value, effectiveFrom: rule.effectiveFrom, effectiveTo: rule.effectiveTo, active: rule.active }));
+  return state.rules.filter(rule => rule.scope === 'product' && rule.type === 'percentage').map(rule => ({ customerCode: state.customers.find(c => c.id === rule.customerId)?.code ?? rule.customerId, productCode: state.products.find(p => p.id === rule.targetId)?.code ?? rule.targetId, discountPercent: rule.value, effectiveFrom: rule.effectiveFrom, effectiveTo: rule.effectiveTo, active: rule.active }));
 }
 
 /** Validate all rows before applying any change; preserve invalid row diagnostics. */
@@ -111,7 +111,7 @@ export function validateImport(kind: TransferKind, rows: SheetRow[], state: AppS
   const ruleKey = (rule: Pick<DiscountRule, 'customerId' | 'scope' | 'targetId'>) => `${rule.customerId}|${rule.scope}|${rule.targetId}`;
   const acceptedRules = new Map<string, DiscountRule[]>();
   const existingRules = new Map<string, DiscountRule[]>();
-  for (const rule of state.rules) { const key = ruleKey(rule); existingRules.set(key, [...(existingRules.get(key) ?? []), rule]); }
+  for (const rule of state.rules.filter(rule => rule.scope === 'product' && rule.type === 'percentage')) { const key = ruleKey(rule); existingRules.set(key, [...(existingRules.get(key) ?? []), rule]); }
   const now = new Date().toISOString();
   const output = rows.map((data, index): ImportResult => {
     const errors: string[] = [];
@@ -122,19 +122,23 @@ export function validateImport(kind: TransferKind, rows: SheetRow[], state: AppS
       const customerCode = required('customerCode');
       const customer = state.customers.find(c => c.code.toLowerCase() === customerCode.toLowerCase());
       if (!customer) errors.push(`Unknown customer code: ${customerCode}`);
-      const scope = required('scope') as DiscountRule['scope'];
-      if (!['product', 'brand', 'category', 'customer'].includes(scope)) errors.push('scope must be product, brand, category, or customer');
-      let targetId = text(data.target);
-      if (scope === 'product') { const product = state.products.find(p => p.code.toLowerCase() === targetId.toLowerCase()); if (!product) errors.push(`Unknown product code: ${targetId}`); targetId = product?.id ?? targetId; }
-      if (scope === 'brand' && !state.suppliers.some(s => s.name === targetId)) errors.push(`Unknown brand: ${targetId}`);
-      if (scope === 'category' && !state.products.some(p => p.category === targetId)) errors.push(`Unknown category: ${targetId}`);
-      if (scope === 'customer') { if (targetId) errors.push('Customer-wide rules must have an empty target'); targetId = ''; }
-      const type = required('type') as DiscountRule['type'];
-      const value = numeric(data.value);
-      if (!['percentage', 'fixed'].includes(type)) errors.push('type must be percentage or fixed');
-      if (value === null || !Number.isFinite(value)) errors.push('value must be a number');
-      else if (type === 'percentage' && (value < 0 || value > 100)) errors.push('Percentage must be between 0 and 100');
-      else if (type === 'fixed' && value <= 0) errors.push('Fixed net price must be greater than zero');
+      const scope = 'product';
+      const legacyScope = text(data.scope).toLowerCase();
+      if (legacyScope && legacyScope !== 'product') errors.push('Only product discounts are supported. Provide a productCode for each customer.');
+      // Existing product-only sheets remain importable with their scope/target columns.
+      const productCode = text(data.productCode) || text(data.target);
+      if (!productCode) errors.push('productCode is required');
+      if (text(data.productCode) && text(data.target) && text(data.productCode).toLowerCase() !== text(data.target).toLowerCase()) errors.push('productCode and legacy target must match');
+      const product = state.products.find(p => p.code.toLowerCase() === productCode.toLowerCase());
+      if (productCode && !product) errors.push(`Unknown product code: ${productCode}`);
+      const targetId = product?.id ?? productCode;
+      const type = 'percentage';
+      const legacyType = text(data.type).toLowerCase();
+      if (legacyType && legacyType !== 'percentage') errors.push('Only percentage discounts are supported. Use discountPercent from 0 to 100.');
+      const value = numeric(text(data.discountPercent) ? data.discountPercent : data.value);
+      if (text(data.discountPercent) && text(data.value) && Number(data.discountPercent) !== Number(data.value)) errors.push('discountPercent and legacy value must match');
+      if (value === null || !Number.isFinite(value)) errors.push('discountPercent must be a number');
+      else if (value < 0 || value > 100) errors.push('Percentage must be between 0 and 100');
       const effectiveFrom = required('effectiveFrom'); const effectiveTo = text(data.effectiveTo);
       if (!validDate(effectiveFrom)) errors.push('effectiveFrom must be a real date in YYYY-MM-DD format');
       if (effectiveTo && (!validDate(effectiveTo) || effectiveTo < effectiveFrom)) errors.push('effectiveTo must be a valid date on or after effectiveFrom');
@@ -144,7 +148,7 @@ export function validateImport(kind: TransferKind, rows: SheetRow[], state: AppS
       const key = ruleKey({ customerId: customer?.id ?? '', scope, targetId });
       const existing = existingRules.get(key)?.find(r => r.effectiveFrom === effectiveFrom);
       const rule: DiscountRule = { id: existing?.id ?? uid('rule'), customerId: customer?.id ?? '', scope, targetId, type, value: value ?? 0, effectiveFrom, effectiveTo, active: activeText !== 'false', updatedAt: now, updatedBy: state.currentUserId };
-      if ([...(existingRules.get(key) ?? []).filter(r => r.id !== rule.id), ...(acceptedRules.get(key) ?? [])].some(r => overlaps(rule, r))) errors.push('Effective dates overlap another active rule for this customer and target');
+      if ([...(existingRules.get(key) ?? []).filter(r => r.id !== rule.id), ...(acceptedRules.get(key) ?? [])].some(r => overlaps(rule, r))) errors.push('Effective dates overlap another active product discount for this customer');
       if (!errors.length) acceptedRules.set(key, [...(acceptedRules.get(key) ?? []), rule]);
       record.record = rule;
     } else if (kind === 'products') {
