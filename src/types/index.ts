@@ -17,7 +17,8 @@ export interface Supplier {
   phone: string; terms: string;
 }
 export interface User { id: string; name: string; email: string; role: Role; canOverride: boolean; active: boolean; }
-export type PriceType = 'percentage' | 'fixed';
+// 'fixed' retains the legacy net-price meaning in saved document snapshots.
+export type PriceType = 'percentage' | 'amount' | 'fixed';
 export interface Price { type: PriceType; value: number; sourceLabel?: string; ruleId?: string; }
 export interface DiscountRule {
   id: string; customerId: string; scope: 'product' | 'brand' | 'category' | 'customer';

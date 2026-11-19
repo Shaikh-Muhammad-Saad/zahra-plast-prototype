@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from './helpers/auth';
+import { chooseCustomer } from './helpers/customer';
 import type { AppState } from '../../src/types';
 
 test.beforeEach(async ({ page }) => { await login(page); });
@@ -55,11 +56,11 @@ test('zero resets a product discount to list price while keeping the selected cu
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto('/pricing');
-  const customer = page.getByRole('combobox', { name: 'Pricing customer', exact: true });
+  const customer = page.getByRole('button', { name: 'Pricing customer', exact: true });
   const brand = page.getByRole('combobox', { name: 'Filter by brand', exact: true });
   const category = page.getByRole('combobox', { name: 'Filter by category', exact: true });
   const search = page.getByRole('searchbox', { name: /Search products or codes/ });
-  await customer.selectOption('c-001');
+  await chooseCustomer(page, 'Pricing customer', 'CUS-001');
   await brand.selectOption('SAFARI');
   await category.selectOption('School bottle');
   await search.fill('Grip Bottle Small');
@@ -72,7 +73,7 @@ test('zero resets a product discount to list price while keeping the selected cu
   await page.screenshot({ path: 'tmp/qa/product-discount-reset.png' });
   await dialog.getByRole('button', { name: 'Save discount', exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(customer).toHaveValue('c-001');
+  await expect(customer).toContainText('CUS-001');
   await expect(brand).toHaveValue('SAFARI');
   await expect(category).toHaveValue('School bottle');
   await expect(search).toHaveValue('Grip Bottle Small');
@@ -90,7 +91,7 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 812, height: 375 }
   test(`a product discount can be edited in a ${viewport.width} by ${viewport.height} viewport`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto('/pricing');
-    await expect(page.getByRole('combobox', { name: 'Pricing customer', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pricing customer', exact: true })).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
     await page.getByRole('button', { name: 'Edit discount for Grip Bottle Small', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Edit product discount', exact: true });

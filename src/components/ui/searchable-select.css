@@ -6,10 +6,12 @@
 }
 .searchable-select-trigger > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .searchable-select-trigger > svg { flex-shrink: 0; color: #576f62; transition: rotate 160ms ease; }
-.searchable-select-trigger:hover { border-color: #8eaf9d; background: #fbfdfb; }
+.searchable-select-trigger:not(:disabled):hover { border-color: #8eaf9d; background: #fbfdfb; }
 .searchable-select-trigger[aria-expanded="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px #16664f14; }
 .searchable-select-trigger[aria-expanded="true"] > svg { rotate: 180deg; }
 .searchable-select-trigger:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.searchable-select-trigger:disabled { cursor: not-allowed; background: #f5f7f4; color: #78867c; border-color: var(--border); }
+.searchable-select-trigger:disabled > svg { opacity: .5; }
 .searchable-select-placeholder { color: #576f62; }
 .searchable-select-popover {
   position: fixed; inset: auto; margin: 0; padding: 0; box-sizing: border-box;

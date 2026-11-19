@@ -24,7 +24,7 @@ The app opens at `/login`. Use **admin@zahraplast.com** with password **Zahra@12
 
 The branding correction includes the demo credentials and storage namespace. Existing browser workspace data migrates automatically; users of the previous version sign in again with the credentials above.
 
-Authentication is a frontend demo gate, not a server security boundary: the displayed credentials and browser storage are client-controlled. Production access control requires a backend. Authentication sessions are separate from workspace data and are never included in workspace backups.
+Authentication is a frontend demo gate, not a server security boundary: the displayed credentials and browser storage are client-controlled. Production access control requires a backend. Authentication sessions are separate from workspace data.
 
 ## Included modules
 
@@ -34,16 +34,13 @@ Authentication is a frontend demo gate, not a server security boundary: the disp
 | Product catalog | All 317 products, original photographs, search, filters, table/grid views, source details, create/edit, optional image attachment |
 | Customers | 150 clearly labeled sample records, groups, payment terms, create/edit, pricing and invoice summaries |
 | Suppliers and brands | Eight source brands, catalog counts, editable contacts/terms, add supplier |
-| Discount matrix | Customer-specific product percentages, discounted-product list, search and brand/category filters, immediate saves, dated pricing and bulk adjustments |
+| Discount matrix | Customer-specific product percentages, discounted-product list, search and brand/category filters, immediate saves, dated pricing, bulk adjustments and Excel price sheets |
 | Quotations | Editable drafts, saved pricing snapshots, conversion retaining prices and override labels |
 | Invoices | Packs/cartons, per-line/all-line overrides, reasons, reset, draft/post lifecycle, locked posted documents, print/PDF |
 | Returns and corrections | Partial/full credit notes using original prices, cumulative return limits, controlled reversal with a reason |
-| Reports | Customer discount sheet, product comparison, brand discount/price summaries and coverage, missing product discounts, override details/frequency/impact, CSV/XLSX export |
-| Activity log | Actor/date/action, old and new values, filtering, detail inspection, CSV export |
-| Import and export | CSV/XLSX templates, parsed previews, row validation, error downloads, valid-row application, master/product-discount/matrix PDF and Excel exports |
-| Rate lists | Dated price versions, scheduled activation, unchanged product discounts and old invoices |
-| Workspace backup | JSON backup and validated restore through Import & export |
 | Sign-in | One demo account, protected workspace routes, expiring local session, logout across tabs |
+
+Reports & analytics, Activity log, and Import & export were removed from the application on 20 November 2026 at the user's request. Their routes and navigation shortcuts are unavailable. Invoice Print/PDF and the discount matrix's Price sheet download remain available. Existing rate versions and audit records are retained in local workspace data.
 
 ## Data provenance
 
@@ -66,9 +63,9 @@ src/
   components/
     layout/               Shared shell, sidebar, logout menu, action feedback
     ui/                   Buttons, fields, dialogs, badges, tables, reusable primitives
-  modules/
+  modules/                Active UI modules listed below
     dashboard/ catalog/ customers/ suppliers/ pricing/
-    sales/ reports/ audit/ transfers/ auth/
+    sales/ auth/
   state/                  Permission-checked operations, provider, local persistence
   lib/                    Pricing engine, validation, spreadsheet tools, formatting
   types/                  Shared domain contracts
@@ -86,7 +83,7 @@ Features share domain types and a centralized action boundary. UI components do 
 
 Seed records and original pictures live in `database/`. Runtime edits are saved to this browser's **IndexedDB**, with atomic serialized writes and visible error feedback. They do not rewrite repository seed files. There is no external database integration or network API.
 
-The local store supports the initial **47,550 customer-product combinations** without relying on the much smaller localStorage quota. Export a JSON backup from Import & export before clearing browser data or moving devices. Concurrent editing across multiple tabs/users is not synchronized; production collaboration will require a backend.
+The local store supports the initial **47,550 customer-product combinations** without relying on the much smaller localStorage quota. The current UI has no workspace backup/restore or data migration page; local changes remain tied to this browser and device. Concurrent editing across multiple tabs/users is not synchronized; production collaboration will require a backend.
 
 ## Pricing guarantees and explicit preview decisions
 
@@ -96,15 +93,13 @@ The scope leaves several choices unresolved. This implementation makes them expl
 
 - The discount matrix accepts percentages for one customer and one product only. Legacy brand, category, customer-default, and fixed-price matrix records stay stored for compatibility but do not determine live pricing.
 - New invoice lines automatically receive the saved percentage for their customer/product and document date. Reset re-evaluates that percentage; existing saved lines otherwise keep snapshots.
-- Whole-document fixed pricing sets one identical **per-selling-unit** price on each line.
+- A fixed discount subtracts a PKR amount from each selling unit's list rate: PKR 1,200 less PKR 300 leaves PKR 900. Applying it to all lines uses the same deduction per selling unit, not a single deduction from the document total.
 - Quote conversion keeps quoted rates as well as discounts, and initially keeps the quote date.
 - Discount dates have inclusive endpoints. Active percentage discounts for the same customer/product cannot overlap.
-- Matrix percentages are finite values from 0 to 100. Separate manual invoice overrides still support positive fixed net prices.
+- Matrix percentages are finite values from 0 to 100. Manual invoice/quotation overrides also support PKR amount discounts from zero up to the affected selling-unit list price. Legacy saved fixed net prices keep their original meaning and totals.
 - Unit net prices round to two decimals, then line totals; invoice totals sum the rounded lines.
 - Product discounts save immediately, including in restored workspaces with a legacy approval flag. Historical approval records remain stored but no approvals UI or automatic approval is used.
-- Existing product rates change through a new dated rate list, not product-master edits.
-
-Brand discount reports group the direct customer/product percentages for the chosen date and customer scope. They show coverage, priced pairs, mean/min/max effective discount, and mean net/discount PKR per selling unit. These are unweighted catalog averages across different selling packs and sets, not sales totals; missing rates are excluded and inactive catalog items remain included.
+- Existing product rates remain read-only in the catalog editor. Stored dated rate versions still resolve prices, but the rate-list import/history UI has been removed.
 
 See [scope coverage](docs/SCOPE_COVERAGE.md) and the [user guide](docs/USER_GUIDE.md). Tax changes, margin reports, procurement, stock control, e-commerce, CRM, and unnamed accounting integrations are outside this frontend delivery. Actual customer migration, business-rule confirmation, client UAT sign-off, production authentication, hosting, and go-live remain future work.
 
@@ -118,7 +113,7 @@ npm run test:e2e
 
 Unit tests cover product-only percentages, legacy record compatibility, dates, numeric validation, permissions, invoice/matrix separation, locked documents, quoted pricing, returns, rate versions, audit behavior, backup validation, full-matrix scale, and real CSV/XLSX parsing. Browser tests cover real user workflows and responsive page bounds.
 
-Latest pricing simplification verification: **49 unit tests passed**, **13 pricing, invoice, and responsive browser scenarios passed**, and the production build passed. Tests cover customer/product percentage isolation, automatic invoice pricing, invalid percentage rejection, zero reset, retained historical snapshots, legacy pricing compatibility, imports/exports and mobile layouts. The renamed product-discount PDF was also downloaded and visually checked. Client acceptance against actual customer discount data remains a separate business step.
+Historical pricing simplification verification (before the report/import pages were removed): **49 unit tests passed**, **13 pricing, invoice, and responsive browser scenarios passed**, and the production build passed. Tests cover customer/product percentage isolation, automatic invoice pricing, invalid percentage rejection, zero reset, retained historical snapshots, legacy pricing compatibility, imports/exports and mobile layouts. The renamed product-discount PDF was also downloaded and visually checked. Client acceptance against actual customer discount data remains a separate business step.
 
 On Windows, browser tests use installed Microsoft Edge. Elsewhere, install the Playwright Chromium browser with `npx playwright install chromium`. `PLAYWRIGHT_BROWSER_CHANNEL` can select another installed channel. The test runner starts or reuses the local Vite server.
 

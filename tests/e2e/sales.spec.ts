@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from './helpers/auth';
+import { chooseCustomer } from './helpers/customer';
 import type { AppState } from '../../src/types';
 
 test.beforeEach(async ({ page }) => { await login(page); });
@@ -22,17 +23,17 @@ async function addProduct(page: Page, name = 'Grip Bottle Small') {
   const editor = page.getByRole('dialog');
   await editor.getByRole('textbox', { name: 'Find a product to add' }).fill(name);
   await editor.getByRole('button', { name: new RegExp(name) }).click();
-  await expect(editor.locator('.sales-line-product')).toContainText(name);
+  await expect(editor.locator('.sales-line-product').filter({ hasText: name })).toContainText(name);
 }
 
-async function startDocument(page: Page, kind: 'invoice' | 'quote' = 'invoice') {
+async function startDocument(page: Page, kind: 'invoice' | 'quote' = 'invoice', productName = 'Grip Bottle Small') {
   await page.goto(kind === 'invoice' ? '/invoices?new=1' : '/quotes?new=1');
   const editor = page.getByRole('dialog');
   await expect(editor.getByRole('heading', { name: `New ${kind}`, exact: true })).toBeVisible();
   await savedState(page);
-  await editor.getByRole('combobox', { name: 'Customer *', exact: true }).selectOption({ index: 1 });
+  await chooseCustomer(page, 'Customer *', 'CUS-001');
   await editor.locator('input[type="date"]').first().fill('2026-11-16');
-  await addProduct(page);
+  await addProduct(page, productName);
   return editor;
 }
 
@@ -82,31 +83,118 @@ test('draft override preserves the matrix, posting locks pricing, and a partial 
   await page.screenshot({ path: 'tmp/sales-posted-credit.png', fullPage: true });
 });
 
-test('a quote conversion carries its override label and exact saved pricing into a new invoice', async ({ page }) => {
-  const editor = await startDocument(page, 'quote');
+test('a PKR 300 discount on a PKR 1200 cooler stays PKR 900 per pack through cartons, quote conversion and invoice preview', async ({ page }) => {
+  const productName = 'Zamzam cooler 2 ltr';
+  const editor = await startDocument(page, 'quote', productName);
   const before = await savedState(page);
   await editor.getByRole('button', { name: 'Adjust all lines', exact: true }).click();
   const override = editor.getByRole('region', { name: 'Invoice discount override' });
-  await override.getByRole('combobox', { name: 'Discount type', exact: true }).selectOption('fixed');
-  await override.getByRole('spinbutton', { name: 'Override fixed net price' }).fill('130');
+  await override.getByRole('combobox', { name: 'Discount type', exact: true }).selectOption('amount');
+  await override.getByRole('spinbutton', { name: 'Override fixed discount', exact: true }).fill('300');
   await override.getByRole('combobox', { name: /^Reason/ }).selectOption('Manager approval');
-  await expect(override).toContainText('same net price');
   await override.getByRole('button', { name: 'Apply to all lines', exact: true }).click();
+  const line = editor.locator('.sales-lines-table tbody tr').filter({ hasText: productName });
+  await expect(line.getByRole('cell').nth(3)).toContainText('1,200.00');
+  await expect(line.getByRole('cell').nth(4)).toContainText('300.00');
+  await expect(line.getByRole('cell').nth(5)).toContainText('900.00');
+  await expect(line.getByRole('cell').nth(6)).toContainText('900.00');
   await editor.getByRole('button', { name: 'Save draft', exact: true }).click();
+  const onePackPreview = page.getByRole('dialog');
+  await expect(onePackPreview.getByRole('button', { name: 'Edit draft', exact: true })).toBeVisible();
+  const onePackLine = onePackPreview.locator('.sales-print-table tbody tr');
+  await expect(onePackLine.getByRole('cell').nth(4)).toContainText('300.00');
+  await expect(onePackLine.getByRole('cell').nth(5)).toContainText('900.00');
+  await expect(onePackLine.getByRole('cell').nth(6)).toContainText('900.00');
+  await page.screenshot({ path: 'tmp/qa/sales-fixed-discount-one-pack-preview.png', fullPage: true, animations: 'disabled' });
+  await onePackPreview.getByRole('button', { name: 'Edit draft', exact: true }).click();
+  await expect(editor.getByRole('spinbutton', { name: 'Quantity for ' + productName })).toBeVisible();
+  await editor.getByRole('combobox', { name: 'Order unit for ' + productName }).selectOption('carton');
+  await editor.getByRole('spinbutton', { name: 'Quantity for ' + productName }).fill('2');
+  await expect(line).toContainText('24 selling packs');
+  await expect(line.getByRole('cell').nth(5)).toContainText('900.00');
+  await expect(line.getByRole('cell').nth(6)).toContainText('21,600.00');
+  await expect(editor.locator('.sales-totals .sales-discount')).toContainText('7,200.00');
+  await editor.getByRole('button', { name: 'Save draft', exact: true }).click();
+  const preview = page.getByRole('dialog');
+  await expect(preview.getByRole('button', { name: 'Edit draft', exact: true })).toBeVisible();
+  const previewLine = preview.locator('.sales-print-table tbody tr').filter({ hasText: productName });
+  await expect(previewLine.getByRole('cell').nth(4)).toContainText('7,200.00');
+  await expect(previewLine.getByRole('cell').nth(5)).toContainText('900.00');
+  await expect(previewLine.getByRole('cell').nth(6)).toContainText('21,600.00');
   const quoteState = await savedState(page);
   const quote = quoteState.documents.find(document => !before.documents.some(old => old.id === document.id))!;
   expect(quote.kind).toBe('Quote');
-  await page.getByRole('dialog').getByRole('button', { name: 'Convert to invoice', exact: true }).click();
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'Post invoice', exact: true })).toBeVisible();
-  await page.getByRole('dialog').getByRole('button', { name: 'Save draft', exact: true }).click();
+  expect(quote.lines[0]).toMatchObject({ productId: 'p-309', listRate: 1200, quantity: 2, unit: 'carton', cartonQuantity: 12, appliedPricing: { type: 'amount', value: 300 }, override: true });
+  await preview.getByRole('button', { name: 'Convert to invoice', exact: true }).click();
+  const invoiceEditor = page.getByRole('dialog');
+  await expect(invoiceEditor.getByRole('button', { name: 'Post invoice', exact: true })).toBeVisible();
+  await expect(invoiceEditor.locator('.sales-lines-table tbody tr').getByRole('cell').nth(5)).toContainText('900.00');
+  await invoiceEditor.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Edit draft', exact: true })).toBeVisible();
   const invoiceState = await savedState(page);
   const invoice = invoiceState.documents.find(document => document.kind === 'Invoice' && document.sourceDocumentId === quote.id)!;
   expect(invoiceState.documents.find(document => document.id === quote.id)?.status).toBe('Converted');
   expect(invoice.lines).toEqual(quote.lines);
-  expect(invoice.lines[0].appliedPricing).toMatchObject({ type: 'fixed', value: 130 });
-  expect(invoice.lines[0].override).toBe(true);
   expect(invoiceState.rules).toEqual(before.rules);
-  await page.screenshot({ path: 'tmp/sales-converted-quote.png', fullPage: true });
+  await page.reload();
+  const reloadedLine = page.getByRole('dialog').locator('.sales-print-table tbody tr');
+  await expect(reloadedLine.getByRole('cell').nth(3)).toContainText('300.00');
+  await expect(reloadedLine.getByRole('cell').nth(5)).toContainText('900.00');
+  await expect(reloadedLine.getByRole('cell').nth(6)).toContainText('21,600.00');
+  await page.screenshot({ path: 'tmp/qa/sales-fixed-discount-preview.png', fullPage: true, animations: 'disabled' });
+});
+
+test('fixed currency discounts reject excess values per line and for mixed-price bulk edits while allowing zero', async ({ page }) => {
+  const cooler = 'Zamzam cooler 2 ltr';
+  const editor = await startDocument(page, 'invoice', cooler);
+  const before = await savedState(page);
+  await editor.getByRole('button', { name: 'Change discount for ' + cooler, exact: true }).click();
+  const override = editor.getByRole('region', { name: 'Invoice discount override' });
+  await override.getByRole('combobox', { name: 'Discount type', exact: true }).selectOption('amount');
+  const amount = override.getByRole('spinbutton', { name: 'Override fixed discount', exact: true });
+  await expect(amount).toHaveAttribute('max', '1200');
+  await amount.fill('1201');
+  await override.getByRole('combobox', { name: /^Reason/ }).selectOption('Sales adjustment');
+  await override.getByRole('button', { name: 'Apply override', exact: true }).click();
+  await expect(override.getByRole('alert')).toBeVisible();
+  const coolerLine = editor.locator('.sales-lines-table tbody tr').filter({ hasText: cooler });
+  await expect(coolerLine.getByRole('cell').nth(5)).toContainText('1,200.00');
+  await amount.fill('300');
+  await override.getByRole('button', { name: 'Apply override', exact: true }).click();
+  await expect(override).not.toBeVisible();
+  await expect(coolerLine.getByRole('cell').nth(5)).toContainText('900.00');
+  await addProduct(page, 'Grip Bottle Small');
+  const smallLine = editor.locator('.sales-lines-table tbody tr').filter({ hasText: 'Grip Bottle Small' });
+  const smallNetBefore = await smallLine.getByRole('cell').nth(5).innerText();
+  await editor.getByRole('button', { name: 'Adjust all lines', exact: true }).click();
+  await override.getByRole('combobox', { name: 'Discount type', exact: true }).selectOption('amount');
+  await expect(amount).toHaveAttribute('max', '156');
+  await amount.fill('157');
+  await override.getByRole('combobox', { name: /^Reason/ }).selectOption('Manager approval');
+  await override.getByRole('button', { name: 'Apply to all lines', exact: true }).click();
+  await expect(override.getByRole('alert')).toBeVisible();
+  await expect(coolerLine.getByRole('cell').nth(5)).toContainText('900.00');
+  await expect(smallLine.getByRole('cell').nth(5)).toHaveText(smallNetBefore);
+  await amount.fill('156');
+  await override.getByRole('button', { name: 'Apply to all lines', exact: true }).click();
+  await expect(override).not.toBeVisible();
+  await expect(coolerLine.getByRole('cell').nth(5)).toContainText('1,044.00');
+  await expect(smallLine.getByRole('cell').nth(5)).toHaveText(/(?:Rs|PKR)\s*0\.00/);
+  await editor.getByRole('button', { name: 'Adjust all lines', exact: true }).click();
+  await override.getByRole('combobox', { name: 'Discount type', exact: true }).selectOption('amount');
+  await amount.fill('0');
+  await override.getByRole('combobox', { name: /^Reason/ }).selectOption('Manager approval');
+  await override.getByRole('button', { name: 'Apply to all lines', exact: true }).click();
+  await expect(override).not.toBeVisible();
+  await expect(coolerLine.getByRole('cell').nth(5)).toContainText('1,200.00');
+  await expect(smallLine.getByRole('cell').nth(5)).toContainText('156.00');
+  await editor.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Edit draft', exact: true })).toBeVisible();
+  const after = await savedState(page);
+  const created = after.documents.find(document => !before.documents.some(old => old.id === document.id))!;
+  expect(created.lines).toHaveLength(2);
+  expect(created.lines.every(line => line.appliedPricing.type === 'amount' && line.appliedPricing.value === 0)).toBe(true);
+  expect(after.rules).toEqual(before.rules);
 });
 
 test('carton ordering uses selling packs and resetting an override restores the applicable matrix', async ({ page }) => {

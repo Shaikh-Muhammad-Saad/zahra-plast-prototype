@@ -81,7 +81,7 @@ export function createOperations(getState: () => AppState, setState: (state: App
       if (!['pack', 'carton'].includes(line.unit)) throw new Error('Choose packs or cartons.');
       if (line.unit === 'carton' && (!line.cartonQuantity || !Number.isInteger(line.cartonQuantity))) throw new Error(`${product.name} has no valid carton quantity.`);
       if (!Number.isFinite(line.listRate) || line.listRate <= 0) throw new Error(`${product.name} has no valid list rate.`);
-      assertValid(validatePrice(line.originalPricing)); assertValid(validatePrice(line.appliedPricing));
+      assertValid(validatePrice(line.originalPricing, line.listRate)); assertValid(validatePrice(line.appliedPricing, line.listRate));
       const oldLine = previous?.lines.find(l => l.id === line.id && l.productId === line.productId);
       if (original) {
         const source = original.lines.find(l => l.id === line.id && l.productId === line.productId);
@@ -406,7 +406,7 @@ export function validateBackup(value: AppState) {
       if (!productIds.has(line.productId) || !line.id || !Number.isFinite(line.listRate) || line.listRate <= 0 || !Number.isInteger(line.quantity) || line.quantity <= 0
         || !['pack', 'carton'].includes(line.unit) || typeof line.override !== 'boolean' || typeof line.reason !== 'string') throw new Error('Backup contains invalid document quantities or rates.');
       if (line.unit === 'carton' && (!line.cartonQuantity || !Number.isInteger(line.cartonQuantity) || line.cartonQuantity <= 0)) throw new Error('Backup contains an invalid carton quantity.');
-      assertValid(validatePrice(line.originalPricing)); assertValid(validatePrice(line.appliedPricing));
+      assertValid(validatePrice(line.originalPricing, line.listRate)); assertValid(validatePrice(line.appliedPricing, line.listRate));
       if (!line.override && !samePrice(line.originalPricing, line.appliedPricing)) throw new Error('Backup contains an unlabelled discount override.');
     }
   }

@@ -5,11 +5,13 @@ export function validDate(value: string) {
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
-export function validatePrice(price: Price): string[] {
-  if (!price || !['percentage', 'fixed'].includes(price.type)) return ['Choose a valid pricing type.'];
+export function validatePrice(price: Price, listRate?: number): string[] {
+  if (!price || !['percentage', 'amount', 'fixed'].includes(price.type)) return ['Choose a valid pricing type.'];
   if (!Number.isFinite(price.value)) return ['Enter a finite numeric price or discount.'];
   if (price.type === 'percentage' && (price.value < 0 || price.value > 100)) return ['Percentage must be between 0 and 100.'];
   if (price.type === 'fixed' && price.value <= 0) return ['Fixed net price must be greater than zero.'];
+  if (price.type === 'amount' && price.value < 0) return ['Fixed discount must be zero or greater.'];
+  if (price.type === 'amount' && listRate !== undefined && price.value > listRate) return ['Fixed discount cannot exceed the list rate.'];
   return [];
 }
 export function validateProduct(product: Product): string[] {

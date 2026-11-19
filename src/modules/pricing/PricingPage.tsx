@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowDownToLine, FileSpreadsheet, Layers3, Pencil, Search, ShieldCheck, SlidersHorizontal, Tag } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ArrowDownToLine, Layers3, Pencil, Search, ShieldCheck, SlidersHorizontal, Tag } from 'lucide-react';
 import { useApp } from '../../state/AppProvider';
-import { Badge, Button, EmptyState, Field, Modal, PageHeader, SearchInput, StatCard } from '../../components/ui';
+import { Badge, Button, CustomerSelect, EmptyState, Field, Modal, PageHeader, SearchInput, StatCard } from '../../components/ui';
 import { effectiveRate, resolvePrice, unitNet } from '../../lib/pricing';
 import { money, number, shortDate, today, uid } from '../../lib/format';
 import { exportSpreadsheet } from '../../lib/spreadsheets';
@@ -15,7 +15,6 @@ const pageSize = 12;
 
 export default function PricingPage() {
   const { state, user, can, actions, notify } = useApp();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>('matrix');
   const [customerId, setCustomerId] = useState(() => state.customers.find(c => c.id === searchParams.get('customer'))?.id ?? state.customers[0]?.id ?? '');
@@ -88,15 +87,14 @@ export default function PricingPage() {
   </div>;
 
   return <div className="page-stack pricing-page">
-    <PageHeader eyebrow="PRICING MANAGEMENT" title="Every customer. The right price." description="Choose a customer and set a discount percentage for each product."
-      actions={<Button onClick={() => navigate('/transfers')}><FileSpreadsheet size={16} />Import discounts</Button>} />
+    <PageHeader eyebrow="PRICING MANAGEMENT" title="Every customer. The right price." description="Choose a customer and set a discount percentage for each product." />
     <div className="pricing-stat-grid">
       <StatCard label="Products" value={number(state.products.length)} detail="Available in your catalog" icon={Layers3} tone="green" />
       <StatCard label="Discounted products" value={number(discountedProducts.length)} detail="For the selected customer and date" icon={Tag} />
       <StatCard label="Without a discount" value={number(state.products.length - discountedProducts.length)} detail="Use the product list price" icon={ShieldCheck} tone="blue" />
     </div>
     <div className="card pricing-context">
-      <div className="pricing-customer"><span className="pricing-customer-icon"><Tag size={20} /></span><Field label="Customer"><select className="select" aria-label="Pricing customer" value={customerId} onChange={e => { setCustomerId(e.target.value); setPage(1); }}>{state.customers.map(c => <option key={c.id} value={c.id}>{c.name} · {c.code}</option>)}</select></Field></div>
+      <div className="pricing-customer"><span className="pricing-customer-icon"><Tag size={20} /></span><CustomerSelect label="Customer" accessibleLabel="Pricing customer" customers={state.customers} value={customerId} onChange={id => { setCustomerId(id); setPage(1); }} /></div>
       <Field label="Effective on"><input className="input" type="date" value={asOf} onChange={e => { setAsOf(e.target.value); setPage(1); }} /></Field>
       <div className="pricing-context-actions">{customer?.sample && <Badge tone="amber">Sample customer</Badge>}<Button size="sm" disabled={!customer || busy} onClick={exportCustomer}><ArrowDownToLine size={15} />{busy ? 'Exporting…' : 'Price sheet'}</Button></div>
     </div>

@@ -44,7 +44,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }).catch(error => {
       if (version === revision.current) {
         setStorageStatus('error');
-        setStorageError(`Changes are available in this tab but could not be saved. Export a backup before closing. ${error instanceof Error ? error.message : 'Browser storage is unavailable.'}`);
+        setStorageError(`Changes are available in this tab but could not be saved. Keep this tab open and check browser storage before continuing. ${error instanceof Error ? error.message : 'Browser storage is unavailable.'}`);
       }
     });
   }
@@ -68,7 +68,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         let fallback = createInitialState();
         try { const legacy = readLegacyWorkspace(); if (legacy) { validateBackup(legacy); fallback = legacy; } } catch { /* Preserve legacy storage untouched. */ }
         const ready = normalizeWorkspaceAccount(refreshEffectiveRates(hydrateImages(fallback))); current.current = ready; setState(ready); setStorageStatus('error');
-        setStorageError(`Saved workspace could not be loaded. ${error instanceof Error ? error.message : ''} Original storage has not been overwritten. Export a backup before making further changes.`);
+        setStorageError(`Saved workspace could not be loaded. ${error instanceof Error ? error.message : ''} Original storage has not been overwritten. Check browser storage before making further changes.`);
       }
     })();
     return () => { cancelled = true; };

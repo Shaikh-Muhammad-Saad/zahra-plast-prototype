@@ -36,7 +36,9 @@ export function resolvePrice(product: Product, customerId: string, date: string,
 }
 
 export function unitNet(rate: number, price: Price): number {
-  return roundMoney(price.type === 'fixed' ? price.value : rate * (1 - price.value / 100));
+  if (price.type === 'fixed') return roundMoney(price.value);
+  if (price.type === 'amount') return roundMoney(rate - price.value);
+  return roundMoney(rate * (1 - price.value / 100));
 }
 export function sellingQuantity(line: DocumentLine): number {
   return line.quantity * (line.unit === 'carton' ? (line.cartonQuantity ?? 0) : 1);

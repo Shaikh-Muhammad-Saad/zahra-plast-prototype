@@ -45,14 +45,28 @@ test('the workspace account can maintain products without removed sidebar contro
 test('all modules render without runtime errors and mobile pages stay within the viewport', async ({ page }) => {
   test.setTimeout(90_000);
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  for (const route of ['/', '/products', '/customers', '/suppliers', '/pricing', '/quotes', '/invoices', '/reports', '/audit', '/transfers']) {
+  for (const route of ['/', '/products', '/customers', '/suppliers', '/pricing', '/quotes', '/invoices']) {
     await page.goto(route); await expect(page.locator('h1')).toBeVisible();
   }
+  const sidebar = page.locator('.sidebar');
+  await expect(sidebar.getByText('INSIGHTS', { exact: true })).toHaveCount(0);
+  for (const name of ['Reports & analytics', 'Activity log', 'Import & export']) {
+    await expect(sidebar.getByRole('link', { name, exact: true })).toHaveCount(0);
+  }
+  await sidebar.screenshot({ path: 'tmp/qa/sidebar-simplified-desktop.png' });
+  for (const route of ['/reports', '/audit', '/transfers']) {
+    await page.goto(route);
+    await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back to overview', exact: true })).toHaveAttribute('href', '/');
+  }
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const route of ['/', '/products', '/customers', '/suppliers', '/reports']) {
+  for (const route of ['/', '/products', '/customers', '/suppliers']) {
     await page.goto(route); await expect(page.locator('h1')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   }
+  await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
+  await expect(sidebar).toHaveClass(/sidebar-open/);
+  await page.screenshot({ path: 'tmp/qa/sidebar-simplified-mobile.png', animations: 'disabled' });
   expect(errors).toEqual([]);
 });

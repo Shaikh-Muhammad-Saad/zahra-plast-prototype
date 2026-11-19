@@ -14,9 +14,15 @@ type Props = {
   searchPlaceholder: string;
   resultsLabel: string;
   emptyMessage: string;
+  emptyHint?: string;
+  disabled?: boolean;
+  hint?: string;
+  hideLabel?: boolean;
+  accessibleLabel?: string;
+  className?: string;
 };
 
-export function SearchableSelect({ label, value, options, onChange, placeholder, searchLabel, searchPlaceholder, resultsLabel, emptyMessage }: Props) {
+export function SearchableSelect({ label, value, options, onChange, placeholder, searchLabel, searchPlaceholder, resultsLabel, emptyMessage, emptyHint = 'Try another name or code.', disabled = false, hint, hideLabel = false, accessibleLabel, className = '' }: Props) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const popup = useRef<HTMLDivElement>(null);
@@ -38,6 +44,7 @@ export function SearchableSelect({ label, value, options, onChange, placeholder,
   }
 
   function show() {
+    if (disabled) return;
     setQuery('');
     setActive(Math.max(0, options.findIndex(option => option.value === value)));
     popup.current?.showPopover();
@@ -45,9 +52,14 @@ export function SearchableSelect({ label, value, options, onChange, placeholder,
   }
 
   function choose(option: SearchableOption) {
+    if (disabled) return;
     onChange(option.value);
     close(true);
   }
+
+  useLayoutEffect(() => {
+    if (disabled && open) close();
+  }, [disabled, open]);
 
   // The native popover stays above modal dialogs. Position within the available
   // viewport, including the smaller visual viewport when a mobile keyboard opens.
@@ -122,13 +134,13 @@ export function SearchableSelect({ label, value, options, onChange, placeholder,
     }
   }
 
-  return <div className="field searchable-select" onBlurCapture={event => {
+  return <div className={`field searchable-select ${className}`} onBlurCapture={event => {
     if (open && event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node)) close();
   }}>
-    <label className="field-label" id={`${id}-label`} htmlFor={`${id}-trigger`}>{label}</label>
-    <button ref={trigger} id={`${id}-trigger`} type="button" className="searchable-select-trigger"
+    <label className={hideLabel ? 'sr-only' : 'field-label'} id={`${id}-label`} htmlFor={`${id}-trigger`}>{label}</label>
+    <button ref={trigger} id={`${id}-trigger`} type="button" className="searchable-select-trigger" disabled={disabled}
       popoverTarget={`${id}-popup`}
-      aria-labelledby={`${id}-label`} aria-describedby={`${id}-value`} aria-haspopup="dialog" aria-expanded={open} aria-controls={`${id}-popup`}
+      aria-label={accessibleLabel} aria-labelledby={accessibleLabel ? undefined : `${id}-label`} aria-describedby={`${id}-value${hint ? ` ${id}-hint` : ''}`} aria-haspopup="dialog" aria-expanded={open} aria-controls={`${id}-popup`}
       onClick={() => {
         if (!open) { setQuery(''); setActive(Math.max(0, options.findIndex(option => option.value === value))); }
       }} onKeyDown={event => {
@@ -137,6 +149,7 @@ export function SearchableSelect({ label, value, options, onChange, placeholder,
       <span id={`${id}-value`} className={selected ? '' : 'searchable-select-placeholder'}>{selected ? `${selected.label}${selected.description ? ` · ${selected.description}` : ''}` : placeholder}</span>
       <ChevronDown size={16} aria-hidden="true" />
     </button>
+    {hint && <span id={`${id}-hint`} className="field-hint">{hint}</span>}
     <div ref={popup} id={`${id}-popup`} popover="auto" role="dialog" aria-label={`Choose ${label.toLowerCase()}`} className="searchable-select-popover"
       onToggle={event => setOpen(event.newState === 'open')}>
       <div className="searchable-select-search"><Search size={17} aria-hidden="true" />
@@ -148,13 +161,13 @@ export function SearchableSelect({ label, value, options, onChange, placeholder,
       <div className="searchable-select-count" role="status">{filtered.length} {filtered.length === 1 ? 'result' : 'results'}</div>
       <div ref={list} id={`${id}-list`} role="listbox" aria-label={resultsLabel} className="searchable-select-options">
         {filtered.map((option, index) => <div key={option.value} id={`${id}-option-${index}`} role="option" aria-selected={option.value === value}
-          className={`searchable-select-option${index === active ? ' is-highlighted' : ''}`} onPointerMove={() => setActive(index)}
+          className={`searchable-select-option${index === active ? ' is-highlighted' : ''}`} onPointerMove={event => { if (event.pointerType === 'mouse') setActive(index); }}
           onMouseDown={event => event.preventDefault()} onClick={() => choose(option)}>
           <span><strong>{option.label}</strong>{option.description && <small>{option.description}</small>}</span>
           {option.value === value && <Check size={16} aria-hidden="true" />}
         </div>)}
       </div>
-      {!filtered.length && <div className="searchable-select-empty"><Search size={23} aria-hidden="true" /><strong>{emptyMessage}</strong><span>Try another name or product code.</span></div>}
+      {!filtered.length && <div className="searchable-select-empty"><Search size={23} aria-hidden="true" /><strong>{emptyMessage}</strong><span>{emptyHint}</span></div>}
     </div>
   </div>;
 }

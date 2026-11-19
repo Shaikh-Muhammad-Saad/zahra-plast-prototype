@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from './helpers/auth';
+import { chooseCustomer } from './helpers/customer';
 import type { AppState, DiscountRule } from '../../src/types';
 
 test.beforeEach(async ({ page }) => { await login(page); });
@@ -75,13 +76,12 @@ test('discounted products follows the selected customer and date and removing th
   await expect(rows.first()).toContainText('10%');
   await expect(rows.first()).toContainText('140.40');
   await expect(page.getByRole('tab', { name: 'Product comparison', exact: true })).toHaveCount(0);
-  const customer = page.getByRole('combobox', { name: 'Pricing customer', exact: true });
-  await customer.selectOption('c-002');
+  await chooseCustomer(page, 'Pricing customer', 'CUS-002');
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText('U bottle');
   await expect(rows.first()).toContainText('12%');
   await expect(rows.first()).toContainText('145.20');
-  await customer.selectOption('c-001');
+  await chooseCustomer(page, 'Pricing customer', 'CUS-001');
   await page.getByLabel('Effective on', { exact: true }).fill('2026-11-05');
   await expect(rows).toHaveCount(2);
   await expect(rows.filter({ hasText: 'grace bottle' })).toContainText('124.00');

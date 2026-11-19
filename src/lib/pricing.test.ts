@@ -292,3 +292,103 @@ describe('returns, permissions and rate history', () => {
     const broken = structuredClone(s.state); broken.products[0].rate = -4; expect(() => validateBackup(broken)).toThrow('positive');
   });
 });
+
+
+describe('currency discount overrides', () => {
+  function discountDraft(state: AppState, value: number, type: 'amount' | 'fixed' = 'amount') {
+    state.rateVersions[0].rates['p-001'] = 1200;
+    const document = draft(state, true);
+    document.lines[0].quantity = 1;
+    document.lines[0].appliedPricing = { type, value, sourceLabel: 'Manual override' };
+    return document;
+  }
+
+  it('subtracts Rs300 from a Rs1200 list rate instead of treating Rs300 as the net price', () => {
+    const s = setup(); const saved = s.actions.saveDocument(discountDraft(s.state, 300));
+    expect(saved.lines[0].appliedPricing).toMatchObject({ type: 'amount', value: 300 });
+    expect(unitNet(saved.lines[0].listRate, saved.lines[0].appliedPricing)).toBe(900);
+    expect(discountAmount(saved.lines[0])).toBe(300);
+    expect(documentTotal(saved)).toBe(900);
+    expect(unitNet(1200, { type: 'fixed', value: 300 })).toBe(300);
+    expect(unitNet(1200.45, { type: 'amount', value: 300.2 })).toBe(900.25);
+  });
+
+  it('applies the currency discount once per selling pack, including carton orders', () => {
+    const s = setup(); const input = discountDraft(s.state, 300);
+    input.lines[0].quantity = 3;
+    const packs = s.actions.saveDocument(input);
+    expect(lineTotal(packs.lines[0])).toBe(2700);
+    expect(discountAmount(packs.lines[0])).toBe(900);
+    input.lines[0].quantity = 2; input.lines[0].unit = 'carton';
+    const cartons = s.actions.saveDocument(input);
+    const count = 2 * cartons.lines[0].cartonQuantity!;
+    expect(sellingQuantity(cartons.lines[0])).toBe(count);
+    expect(lineTotal(cartons.lines[0])).toBe(900 * count);
+    expect(discountAmount(cartons.lines[0])).toBe(300 * count);
+  });
+
+  it.each([0, 1200])('accepts a discount amount of %s and allows posting', value => {
+    const s = setup(); const saved = s.actions.saveDocument(discountDraft(s.state, value));
+    s.actions.postDocument(saved.id);
+    expect(documentTotal(saved)).toBe(1200 - value);
+    expect(discountAmount(saved.lines[0])).toBe(value);
+    expect(s.state.documents.find(document => document.id === saved.id)?.status).toBe('Posted');
+  });
+
+  it('rejects negative, nonfinite or excessive amounts before saving and at posting', () => {
+    const s = setup(); const input = discountDraft(s.state, 300);
+    const before = structuredClone(s.state);
+    for (const value of [-1, NaN, Infinity, 1200.01]) {
+      const invalid = { ...input, lines: [{ ...input.lines[0], appliedPricing: { type: 'amount' as const, value } }] };
+      expect(() => s.actions.saveDocument(invalid)).toThrow();
+      expect(s.state).toEqual(before);
+    }
+    const saved = s.actions.saveDocument(input);
+    s.state.documents.find(document => document.id === saved.id)!.lines[0].appliedPricing.value = 1201;
+    expect(() => s.actions.postDocument(saved.id)).toThrow('cannot exceed the list rate');
+  });
+
+  it.each(['amount', 'fixed'] as const)('preserves %s pricing through quote conversion, posting and a partial credit', type => {
+    const s = setup(); const input = discountDraft(s.state, 300, type);
+    input.kind = 'Quote'; input.lines[0].quantity = 2;
+    const quote = s.actions.saveDocument(input);
+    const invoice = s.actions.convertQuote(quote.id);
+    expect(invoice.lines).toEqual(quote.lines);
+    s.actions.postDocument(invoice.id);
+    const original = structuredClone(s.state.documents.find(document => document.id === invoice.id)!);
+    const credit = s.actions.creditDocument(invoice.id, 'Return one pack');
+    credit.lines[0].quantity = 1;
+    const savedCredit = s.actions.saveDocument(credit); s.actions.postDocument(savedCredit.id);
+    expect(savedCredit.lines[0].appliedPricing).toEqual(quote.lines[0].appliedPricing);
+    expect(documentTotal(savedCredit)).toBe(type === 'amount' ? 900 : 300);
+    expect(s.state.documents.find(document => document.id === invoice.id)).toEqual(original);
+    const remainder = s.actions.creditDocument(invoice.id, 'Return remaining pack');
+    expect(remainder.lines[0].quantity).toBe(1);
+    expect(remainder.lines[0].appliedPricing).toEqual(savedCredit.lines[0].appliedPricing);
+  });
+
+  it('round-trips new amount and legacy fixed snapshots and rejects excessive amounts in backups', () => {
+    const s = setup(); const amount = s.actions.saveDocument(discountDraft(s.state, 300));
+    s.actions.postDocument(amount.id);
+    const legacy = discountDraft(s.state, 300, 'fixed'); legacy.id = 'legacy-fixed-document';
+    s.actions.saveDocument(legacy); s.actions.postDocument(legacy.id);
+    const snapshots = structuredClone(s.state.documents);
+    expect(() => validateBackup(s.state)).not.toThrow();
+    s.actions.restoreBackup(structuredClone(s.state));
+    expect(s.state.documents).toEqual(snapshots);
+    expect(documentTotal(s.state.documents.find(document => document.id === amount.id)!)).toBe(900);
+    expect(documentTotal(s.state.documents.find(document => document.id === legacy.id)!)).toBe(300);
+    for (const field of ['originalPricing', 'appliedPricing'] as const) {
+      const invalid = structuredClone(s.state);
+      invalid.documents.find(document => document.id === amount.id)!.lines[0][field] = { type: 'amount', value: 1201 };
+      expect(() => validateBackup(invalid)).toThrow('cannot exceed the list rate');
+    }
+  });
+
+  it('keeps the saved customer product matrix percentage-only', () => {
+    const s = setup(); const before = structuredClone(s.state);
+    expect(() => s.actions.saveProductDiscount('c-150', 'p-001', { type: 'amount', value: 25 }, '2026-11-16')).toThrow('percentage');
+    expect(() => s.actions.saveRules([{ ...rule(), type: 'amount', value: 25 }])).toThrow('percentage');
+    expect(s.state).toEqual(before);
+  });
+});

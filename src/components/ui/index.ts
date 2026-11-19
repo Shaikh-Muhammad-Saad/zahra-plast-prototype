@@ -8,3 +8,4 @@ export * from './StatCard';
 export * from './ProductImage';
 export * from './Pagination';
 export * from './SearchableSelect';
+export * from './CustomerSelect';

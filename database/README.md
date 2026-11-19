@@ -16,9 +16,9 @@ Local changes do not overwrite these seed files and are not shared between brows
 - Effective-date endpoints are inclusive. Active percentage discounts for the same customer/product cannot overlap.
 - Reset re-evaluates the matrix for the document date. Saved lines otherwise keep their pricing snapshots.
 - A saved document's date or customer cannot change while its existing lines remain. Remove and re-add lines to select prices for a changed date/customer. Scheduled rate versions become current on their effective date; existing document snapshots are untouched.
-- Whole-invoice fixed pricing means the same fixed **per-selling-unit** price on each line.
+- Whole-invoice fixed discounts subtract the same PKR amount from each selling unit on every line. PKR 300 off a PKR 1,200 unit leaves PKR 900; quantity and carton conversion then determine the line total.
 - Unit prices round to two decimals, then extended line amounts to two decimals. Totals sum rounded lines. No tax configuration is assumed.
-- Overrides have no additional managerial percentage cap, but finite 0–100 percentages and positive fixed prices maintain meaningful amounts.
+- Overrides accept finite percentages from 0 to 100 and PKR deductions from zero up to the selling-unit list price. New currency deductions use the amount price type; legacy fixed records remain net prices so saved documents, conversions, and credits retain their original totals.
 - Quote conversion keeps quoted rates and discounts. The invoice date is the quote date initially; this makes the carried snapshot explicit until a future agreed repricing policy exists.
 - Product discount changes apply immediately even when a restored workspace retains a legacy approval flag. Historical approval records remain stored without being automatically applied.
 - Credit notes retain original pricing and permit partial quantities, bounded by quantities not already credited. Controlled reversal keeps the original document in the audit trail.

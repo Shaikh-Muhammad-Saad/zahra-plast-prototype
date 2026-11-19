@@ -130,7 +130,7 @@ test('an invoice with unsaved changes stays open until discard is confirmed', as
   const notes = dialog.getByRole('textbox', { name: /^Document notes/ });
   await notes.fill('Keep these notes until discard is confirmed.');
   await page.keyboard.press('Escape');
-  await expect(dialog.getByText('Discard your unsaved changes?', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('You have unsaved changes', { exact: true })).toBeVisible();
   await expect(dialog).toHaveAttribute('data-state', 'open');
   await dialog.getByRole('button', { name: 'Keep editing', exact: true }).click();
   await expect(notes).toHaveValue('Keep these notes until discard is confirmed.');
